@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.env
+benchmarks/.cache/
+benchmarks/scorecard.json
+*.egg-info/
+dist/
