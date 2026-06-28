@@ -1,7 +1,7 @@
 # Plain free CLIs as jobs — works on any GitLab (incl. self-managed EPITA),
 # no Ultimate license required. Stages: quality gate -> security -> build ->
-# scan/sign the image -> (manual) benchmark scorecard.
-stages: [lint, test, security, build, sign, benchmark]
+# (manual) benchmark scorecard.
+stages: [lint, test, security, build, benchmark]
 
 variables:
   IMAGE: $CI_REGISTRY_IMAGE
@@ -83,52 +83,6 @@ build:
   artifacts:
     reports:
       dotenv: build.env
-
-# === scan & sign the built image =============================================
-container-scan:    # image CVEs — report only
-  stage: sign
-  image:
-    name: aquasec/trivy:latest
-    entrypoint: [""]
-  needs: ["build"]
-  rules:
-    - if: $CI_COMMIT_BRANCH
-  script:
-    - trivy image --severity HIGH,CRITICAL "$IMAGE_DIGEST"
-  allow_failure: true
-
-sbom:              # software bill of materials -> artifact
-  stage: sign
-  image:
-    name: anchore/syft:latest
-    entrypoint: [""]
-  needs: ["build"]
-  rules:
-    - if: $CI_COMMIT_BRANCH
-  variables:
-    SYFT_REGISTRY_AUTH_USERNAME: "$CI_REGISTRY_USER"
-    SYFT_REGISTRY_AUTH_PASSWORD: "$CI_REGISTRY_PASSWORD"
-  script:
-    - syft "registry:$IMAGE_DIGEST" -o spdx-json=sbom.spdx.json
-  artifacts:
-    paths: [sbom.spdx.json]
-
-sign:              # keyless image signature + SBOM attestation (Sigstore)
-  stage: sign
-  image:
-    name: gcr.io/projectsigstore/cosign:v2.4.1
-    entrypoint: [""]
-  needs: ["build", "sbom"]
-  rules:
-    - if: $CI_COMMIT_BRANCH
-  # GitLab OIDC token consumed by cosign for keyless signing (aud=sigstore).
-  id_tokens:
-    SIGSTORE_ID_TOKEN:
-      aud: sigstore
-  script:
-    - cosign login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
-    - cosign sign --yes "$IMAGE_DIGEST"
-    - cosign attest --yes --predicate sbom.spdx.json --type spdxjson "$IMAGE_DIGEST"
 
 # === benchmark scorecard (manual: slow, downloads datasets) ===================
 benchmark:
