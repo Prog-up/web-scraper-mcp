@@ -9,7 +9,7 @@ variables:
 
 # --- reusable uv job (Python 3.13, frozen lockfile) ---------------------------
 .uv:
-  image: ghcr.io/astral-sh/uv:0.11-python3.13-bookworm-slim
+  image: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
   variables:
     UV_CACHE_DIR: "$CI_PROJECT_DIR/.uv-cache"
   cache:
