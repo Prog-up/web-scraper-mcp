@@ -34,9 +34,7 @@ async def _grab(url: str) -> dict | None:
 
 
 async def _synthesize(query: str, docs: list[dict]) -> str:
-    from anthropic import AsyncAnthropic
-
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    model = settings.research_model
     blob = "\n\n".join(
         f"## Source {i + 1}: {d['url']}\n{d['markdown'][:_PER_SOURCE_CHARS]}"
         for i, d in enumerate(docs)
@@ -46,13 +44,38 @@ async def _synthesize(query: str, docs: list[dict]) -> str:
         "concise, structured report that answers the question. Cite sources "
         "inline as [n] using the source numbers."
     )
-    msg = await client.messages.create(
-        model=settings.research_model,
-        max_tokens=2048,
-        system=system,
-        messages=[{"role": "user", "content": f"Question: {query}\n\nSources:\n{blob}"}],
-    )
-    return "".join(b.text for b in msg.content if b.type == "text")
+
+    if model.startswith("claude-"):
+        from anthropic import AsyncAnthropic
+
+        client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+        msg = await client.messages.create(
+            model=model,
+            max_tokens=2048,
+            system=system,
+            messages=[{"role": "user", "content": f"Question: {query}\n\nSources:\n{blob}"}],
+        )
+        return "".join(b.text for b in msg.content if b.type == "text")
+
+    # Ollama execution path
+    import httpx
+
+    url = settings.ollama_url("/api/chat")
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": f"Question: {query}\n\nSources:\n{blob}"},
+    ]
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+    }
+    async with httpx.AsyncClient(timeout=settings.request_timeout_s * 2) as http_client:
+        resp = await http_client.post(url, json=payload)
+
+        resp.raise_for_status()
+        data = resp.json()
+    return data.get("message", {}).get("content", "")
 
 
 def register(mcp: FastMCP) -> None:
@@ -64,7 +87,7 @@ def register(mcp: FastMCP) -> None:
         ] = 5,
     ) -> dict:
         """Search the web, read the top sources, and return a cited synthesis report."""
-        if not settings.anthropic_api_key:
+        if settings.research_model.startswith("claude-") and not settings.anthropic_api_key:
             return {"error": "ANTHROPIC_API_KEY is not set — deep_research is unavailable."}
         backend, fn = _pick_backend()
         try:

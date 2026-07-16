@@ -35,13 +35,27 @@ class Settings(BaseSettings):
     # SSRF: keep False in any networked deployment. Only flip for local testing.
     allow_private_networks: bool = False
 
-    # --- LLM (extract / deep_research) ---
+    # --- LLM (extract / deep_research / Ollama) ---
+    ollama_host: str = Field(
+        default="127.0.0.1:11434",
+        validation_alias=AliasChoices("OLLAMA_HOST", "SCRAPER_OLLAMA_HOST"),
+    )
     anthropic_api_key: str | None = Field(
         default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY")
     )
-    extract_model: str = "claude-haiku-4-5"
+    extract_model: str = "llama3.1"
+    research_model: str = "llama3.1"
 
-    research_model: str = "claude-sonnet-4-6"
+    def ollama_url(self, path: str) -> str:
+        host = self.ollama_host or "127.0.0.1:11434"
+        if not host.startswith(("http://", "https://")):
+            host = f"http://{host}"
+        from urllib.parse import urlparse
+
+        parsed = urlparse(host)
+        if ":" not in parsed.netloc:
+            host = f"{host}:11434"
+        return f"{host.rstrip('/')}{path}"
 
     # --- search backends (first configured wins; else ddgs) ---
     searxng_url: str | None = None
