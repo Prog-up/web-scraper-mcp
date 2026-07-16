@@ -39,7 +39,8 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = Field(
         default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY")
     )
-    extract_model: str = "claude-haiku-4-5-20251001"
+    extract_model: str = "claude-haiku-4-5"
+
     research_model: str = "claude-sonnet-4-6"
 
     # --- search backends (first configured wins; else ddgs) ---

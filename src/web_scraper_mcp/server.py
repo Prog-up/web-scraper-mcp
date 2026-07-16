@@ -9,15 +9,26 @@ from __future__ import annotations
 
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 
 from .config import settings
+from .runtime import pool
 from .tools import register
 
 logging.basicConfig(level=os.environ.get("SCRAPER_LOG_LEVEL", "INFO"))
 logger = logging.getLogger("web_scraper_mcp")
+
+
+@asynccontextmanager
+async def server_lifespan(server: FastMCP):
+    try:
+        yield
+    finally:
+        logger.info("Closing browser pool...")
+        await pool.close()
 
 
 def build_app() -> FastMCP:
@@ -31,7 +42,8 @@ def build_app() -> FastMCP:
             "SCRAPER_AUTH_TOKEN is not set — the HTTP endpoint is UNAUTHENTICATED. "
             "Set a token for any networked deployment."
         )
-    mcp = FastMCP("web-scraper-mcp", auth=auth)
+    mcp = FastMCP("web-scraper-mcp", auth=auth, lifespan=server_lifespan)
+
     register(mcp)
     return mcp
 
