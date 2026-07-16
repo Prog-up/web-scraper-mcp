@@ -50,32 +50,50 @@ async def _run(
     job: CrawlJob, start: str, max_pages: int, max_depth: int, same_domain: bool
 ) -> None:
     try:
+        # Visit the seed URL first to detect initial validation / reachability failures
+        try:
+            res = await _crawl_one(start, same_domain)
+        except Exception as exc:
+            job.status = "failed"
+            job.error = f"Failed to fetch seed URL: {exc}"
+            return
+
+        page, links = res
+        job.pages.append(page)
+
         seen: set[str] = {start}
-        frontier = [start]
+        frontier: list[str] = []
+        for link in links:
+            if link not in seen:
+                seen.add(link)
+                frontier.append(link)
+
         sem = asyncio.Semaphore(settings.max_concurrent_pages)
 
         async def visit(u: str) -> tuple[dict, list[str]] | None:
             async with sem:
                 try:
                     return await _crawl_one(u, same_domain)
-                except Exception:  # noqa: BLE001 - skip unreachable/blocked pages
+                except Exception:  # noqa: BLE001 - skip unreachable/blocked sub-pages
                     return None
 
-        for _ in range(max_depth + 1):
+        # Run the BFS loop for the remaining depth (seed page is already fetched, which is depth 0)
+        for _ in range(max_depth):
             if not frontier or len(job.pages) >= max_pages:
                 break
             batch = frontier[: max_pages - len(job.pages)]
             results = await asyncio.gather(*(visit(u) for u in batch))
             next_frontier: list[str] = []
-            for res in results:
-                if res is None:
+            for r in results:
+                if r is None:
                     continue
-                page, links = res
-                job.pages.append(page)
-                for link in links:
+                p, lks = r
+                job.pages.append(p)
+                for link in lks:
                     if link not in seen:
                         seen.add(link)
                         next_frontier.append(link)
+
             frontier = next_frontier
         job.status = "completed"
     except Exception as exc:  # noqa: BLE001

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from .config import Settings
-from .security import host_is_obviously_private
+from .security import BlockedURLError, validate_url
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page, Playwright
@@ -55,11 +55,21 @@ class BrowserPool:
             return self._browser
 
     async def _guard_route(self, route) -> None:  # noqa: ANN001
-        host = urlparse(route.request.url).hostname or ""
-        if host_is_obviously_private(host):
-            await route.abort()
-        else:
-            await route.continue_()
+        url = route.request.url
+        parsed = urlparse(url)
+        if parsed.scheme in ("http", "https"):
+            try:
+                await asyncio.to_thread(
+                    validate_url, url, allow_private=self._settings.allow_private_networks
+                )
+            except BlockedURLError:
+                await route.abort()
+                return
+        elif parsed.scheme not in ("data", "blob"):
+            if not self._settings.allow_private_networks:
+                await route.abort()
+                return
+        await route.continue_()
 
     async def _new_context(self, browser: Browser) -> BrowserContext:
         context = await browser.new_context(user_agent=self._settings.user_agent)

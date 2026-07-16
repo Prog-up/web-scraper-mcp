@@ -39,3 +39,14 @@ def test_crawl_depth_zero_is_seed_only(monkeypatch):
     job = crawlmod.CrawlJob(job_id="t3")
     asyncio.run(crawlmod._run(job, "https://s/a", max_pages=100, max_depth=0, same_domain=True))
     assert [p["url"] for p in job.pages] == ["https://s/a"]
+
+
+def test_crawl_seed_failure(monkeypatch):
+    async def _failing_crawl_one(url, same_domain):
+        raise ValueError("Connection refused")
+
+    monkeypatch.setattr(crawlmod, "_crawl_one", _failing_crawl_one)
+    job = crawlmod.CrawlJob(job_id="t4")
+    asyncio.run(crawlmod._run(job, "https://s/a", max_pages=100, max_depth=5, same_domain=True))
+    assert job.status == "failed"
+    assert "Connection refused" in (job.error or "")
