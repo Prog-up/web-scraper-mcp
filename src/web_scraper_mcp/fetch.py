@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import time
 import urllib.robotparser
+from contextlib import suppress
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
@@ -121,7 +122,15 @@ async def _fetch_browser(url: str, s: Settings, pool: BrowserPool) -> FetchResul
         resp = await page.goto(
             url, timeout=s.request_timeout_s * 1000, wait_until="domcontentloaded"
         )
-        html = (await page.content())[: s.max_response_bytes]
+        try:
+            html = await page.content()
+        except Exception:
+            # Settle down client-side navigations / redirects
+            with suppress(Exception):
+                await page.wait_for_load_state("load", timeout=5000)
+            html = await page.content()
+
+        html = html[: s.max_response_bytes]
         return FetchResult(
             url=page.url, status=resp.status if resp else 0, html=html, via="browser"
         )
