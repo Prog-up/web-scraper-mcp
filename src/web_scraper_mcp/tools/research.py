@@ -70,7 +70,7 @@ async def _synthesize(query: str, docs: list[dict]) -> str:
         "messages": messages,
         "stream": False,
     }
-    async with httpx.AsyncClient(timeout=settings.request_timeout_s * 2) as http_client:
+    async with httpx.AsyncClient(timeout=120.0) as http_client:
         resp = await http_client.post(url, json=payload)
 
         resp.raise_for_status()
