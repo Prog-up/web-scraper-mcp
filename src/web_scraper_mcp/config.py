@@ -31,7 +31,8 @@ class Settings(BaseSettings):
 
     # --- politeness / anti-bot (self-hosted) ---
     user_agent: str = "web-scraper-mcp/0.1 (+https://gitlab.cri.epita.fr/enzo.juhel/web-scraper)"
-    respect_robots: bool = True
+    respect_robots: bool = False
+
     # SSRF: keep False in any networked deployment. Only flip for local testing.
     allow_private_networks: bool = False
 

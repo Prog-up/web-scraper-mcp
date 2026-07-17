@@ -8,10 +8,25 @@ import trafilatura
 from selectolax.parser import HTMLParser
 
 
+def _fallback_markdown(html: str) -> str:
+    """Fallback layout parser when main-content extractor fails."""
+
+    parser = HTMLParser(html)
+    for tag in ("script", "style", "head", "iframe", "svg"):
+        for node in parser.css(tag):
+            node.decompose()
+    body = parser.body
+    return body.text(separator="\n", strip=True) if body else ""
+
+
 def to_markdown(html: str, url: str) -> str:
     """Clean main-content markdown (nav/ads/boilerplate stripped)."""
-    md = trafilatura.extract(html, url=url, output_format="markdown", include_links=True)
-    return md or ""
+    md = trafilatura.extract(html, url=url, output_format="markdown", include_links=True) or ""
+    if len(md.strip()) < 500:
+        fallback = _fallback_markdown(html)
+        if len(fallback) > len(md) * 2:
+            return fallback
+    return md
 
 
 def title_of(html: str) -> str | None:
