@@ -1,0 +1,385 @@
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                FastMCP 3.4.2                                 │
+│                            https://gofastmcp.com                             │
+│                                                                              │
+│                  🖥  Server:      web-scraper-mcp, 3.4.2                      │
+│                  🚀 Deploy free: https://horizon.prefect.io                  │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                          🎉 Update available: 3.4.7                          │
+│                      Run: pip install --upgrade fastmcp                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+[08/24/26 23:49:52] INFO     Starting MCP server                transport.py:304
+                             'web-scraper-mcp' with transport                   
+                             'http' on                                          
+                             http://127.0.0.1:8000/mcp                          
+INFO:     Started server process [11077]
+INFO:     Waiting for application startup.
+INFO:mcp.server.streamable_http_manager:StreamableHTTP session manager started
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:mcp.server.streamable_http_manager:Created new transport with session ID: 73a738ad73a641089bd7c59b28c38a57
+INFO:     127.0.0.1:51222 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51232 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:51246 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51258 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type ListToolsRequest
+INFO:     127.0.0.1:47034 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51880 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:58090 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:34346 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:38284 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:40382 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52282 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:34734 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:39594 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:46074 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:58686 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:58492 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:47244 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:46610 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:49702 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52528 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:40674 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:41836 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:59300 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:47758 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51792 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:39936 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54322 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:46760 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:46698 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:33692 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:59164 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42826 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:60740 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:43200 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:55952 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:47104 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44914 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:38280 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:40160 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:34614 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52466 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:38948 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:39988 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:34712 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:37194 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:40146 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:56712 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52164 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:53720 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:41724 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:46644 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:33056 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:48030 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54330 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51406 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:39500 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54332 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:40236 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42470 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51178 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:56882 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51510 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:58764 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54628 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:59066 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42010 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51428 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52926 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:43484 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:35784 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:38972 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:32970 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:56356 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:43834 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:55480 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54764 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42116 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:43628 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:33020 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44898 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:38100 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52498 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54068 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:60856 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44976 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:48198 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:41974 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:55214 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:39026 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:43134 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42792 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51342 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51742 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:36788 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44960 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:41782 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:55044 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:49398 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:36732 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:49524 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54934 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:32932 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:33026 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44980 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42700 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42056 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54152 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52448 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:37056 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51832 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:58926 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:47398 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42336 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:58638 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:50192 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:48162 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:41506 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:33500 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44834 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:36294 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:34396 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:36830 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:40494 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:55050 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:33162 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42510 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:45584 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:46204 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:41136 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:48920 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:55456 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52338 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:59824 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:43626 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:57204 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:37068 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:52324 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:35840 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:46756 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:36770 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:59374 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:34346 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:47514 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44738 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:45576 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:45184 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:41914 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:54098 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:36946 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:37638 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:60850 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:48278 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:51884 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:33798 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:53136 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:mcp.server.streamable_http_manager:Created new transport with session ID: 330fb7ffa39241febc4aaaa8ffab57b6
+INFO:     127.0.0.1:36846 - "HEAD /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:mcp.server.streamable_http_manager:Created new transport with session ID: b5187122b51946d8986b0282240f12f4
+INFO:     127.0.0.1:36846 - "GET /mcp HTTP/1.1" 406 Not Acceptable
+INFO:mcp.server.streamable_http_manager:Created new transport with session ID: ee062757789f41a3bbd69f5c494b242e
+INFO:     127.0.0.1:36848 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36858 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:36874 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36876 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type ListToolsRequest
+INFO:     127.0.0.1:36892 - "GET /v2/models HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36896 - "GET /v2/v1/models HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36900 - "GET /v1/models HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36908 - "GET /models HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36918 - "GET /v3/models HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36934 - "GET /v3/v1/models HTTP/1.1" 404 Not Found
+INFO:mcp.server.streamable_http:Terminating session: ee062757789f41a3bbd69f5c494b242e
+INFO:     127.0.0.1:58444 - "DELETE /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39512 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:50182 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44450 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:44188 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:42008 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:49266 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:35334 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:34192 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:     127.0.0.1:47916 - "POST /mcp HTTP/1.1" 200 OK
+INFO:mcp.server.lowlevel.server:Processing request of type PingRequest
+INFO:mcp.server.streamable_http:Terminating session: 73a738ad73a641089bd7c59b28c38a57
+INFO:     127.0.0.1:38484 - "DELETE /mcp HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:mcp.server.streamable_http:Terminating session: 330fb7ffa39241febc4aaaa8ffab57b6
+INFO:mcp.server.streamable_http:Terminating session: b5187122b51946d8986b0282240f12f4
+INFO:mcp.server.streamable_http_manager:StreamableHTTP session manager shutting down
+INFO:     Application shutdown complete.
+INFO:     Finished server process [11077]
