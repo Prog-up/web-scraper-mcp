@@ -36,19 +36,75 @@ Stdio (local, for a desktop client): `SCRAPER_TRANSPORT=stdio uv run web-scraper
 
 ### Docker
 
+The fastest way to get started is by pulling the pre-built image from DockerHub.
+
 ```bash
-docker build -t web-scraper-mcp .
-docker run -p 8000:8000 -e SCRAPER_AUTH_TOKEN=$(openssl rand -hex 32) web-scraper-mcp
+# Pull the latest image
+docker pull PROG_UP_USERNAME/web-scraper-mcp:latest
+
+# Run the container (with Anthropic / Claude)
+docker run -p 8000:8000 \
+  -e SCRAPER_AUTH_TOKEN=your_secure_token_here \
+  -e ANTHROPIC_API_KEY=sk-ant-api03-... \
+  PROG_UP_USERNAME/web-scraper-mcp:latest
+
+# Or run the container over stdio (useful for local MCP clients)
+docker run -i --rm \
+  -e SCRAPER_TRANSPORT=stdio \
+  -e SCRAPER_AUTH_TOKEN=your_secure_token_here \
+  PROG_UP_USERNAME/web-scraper-mcp:latest
 ```
+*(Make sure to replace `PROG_UP_USERNAME` with your actual DockerHub username).*
+
+### Using Local Models (Ollama) & Context Windows
+
+If you prefer to run models locally instead of using Anthropic's API, the server fully supports **Ollama** as an alternative backend for the `extract` and `deep_research` tools.
+
+```bash
+docker run -p 8000:8000 \
+  -e SCRAPER_AUTH_TOKEN=your_secure_token_here \
+  -e SCRAPER_OLLAMA_HOST=http://host.docker.internal:11434 \
+  -e SCRAPER_EXTRACT_MODEL=qwen3.5:2b \
+  -e SCRAPER_RESEARCH_MODEL=qwen3.5:2b \
+  PROG_UP_USERNAME/web-scraper-mcp:latest
+```
+
+> [!WARNING]
+> **Context Windows are Critical!**
+> Web scraping produces a massive amount of Markdown. `extract` can send up to 100,000 characters and `deep_research` can send up to 16,000 characters to the LLM. 
+> 
+> By default, Claude handles massive contexts natively. However, Ollama's default context window (`num_ctx`) is often configured to just 2,048 tokens. If you pass an enormous Wikipedia page to a local model, it will silently truncate the prompt (dropping your instructions) and return empty strings! 
+> 
+> **We automatically pass `"num_ctx": 32768` to Ollama** in the API payloads to prevent this truncation. Ensure that your local machine has enough RAM/VRAM to support a 32K context window when using Ollama!
 
 ### Register in a client (`mcp.json`)
 
+If running via HTTP:
 ```json
 {
   "mcpServers": {
     "web-scraper": {
       "url": "http://127.0.0.1:8000/mcp",
-      "headers": { "Authorization": "Bearer YOUR_SCRAPER_AUTH_TOKEN" }
+      "headers": { "Authorization": "Bearer your_secure_token_here" }
+    }
+  }
+}
+```
+
+If running via stdio (Docker):
+```json
+{
+  "mcpServers": {
+    "web-scraper": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "SCRAPER_TRANSPORT=stdio",
+        "-e", "SCRAPER_OLLAMA_HOST=http://host.docker.internal:11434",
+        "-e", "SCRAPER_EXTRACT_MODEL=qwen3.5:2b",
+        "-e", "SCRAPER_RESEARCH_MODEL=qwen3.5:2b",
+        "PROG_UP_USERNAME/web-scraper-mcp:latest"
+      ]
     }
   }
 }
