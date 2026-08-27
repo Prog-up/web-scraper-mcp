@@ -6,6 +6,8 @@ on:
       - main
       - master
       - feat/scraper-mcp-server
+    tags:
+      - '*.*.*'
 
 jobs:
   build-and-push:
@@ -29,18 +31,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/web-scraper-mcp
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+
       - name: Build and push
         id: push-step
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/web-scraper-mcp:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Sign the published Docker image
         env:
-          TAGS: ${{ secrets.DOCKERHUB_USERNAME }}/web-scraper-mcp:latest
+          TAGS: ${{ steps.meta.outputs.tags }}
           DIGEST: ${{ steps.push-step.outputs.digest }}
         run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
