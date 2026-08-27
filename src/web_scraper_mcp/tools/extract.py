@@ -71,6 +71,7 @@ async def _llm_extract(markdown: str, schema: dict | None, prompt: str | None) -
         "model": model,
         "messages": messages,
         "stream": False,
+        "options": {"num_ctx": 32768},
     }
 
     if schema is not None:

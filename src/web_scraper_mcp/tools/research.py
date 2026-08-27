@@ -69,6 +69,7 @@ async def _synthesize(query: str, docs: list[dict]) -> str:
         "model": model,
         "messages": messages,
         "stream": False,
+        "options": {"num_ctx": 32768},
     }
     async with httpx.AsyncClient(timeout=120.0) as http_client:
         resp = await http_client.post(url, json=payload)
