@@ -5,6 +5,9 @@ FROM mcr.microsoft.com/playwright/python:v1.60.0-noble
 # uv binary, no pip anywhere.
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /uvx /bin/
 
+# Update OS packages to fix OpenSSL (CVE-2026-45447) and GStreamer (CVE-2025-3887)
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
