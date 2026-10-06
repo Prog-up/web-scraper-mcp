@@ -7,15 +7,19 @@ unspecified address. Re-validate every redirect hop in the fetch layer.
 
 from __future__ import annotations
 
+import asyncio
 import ipaddress
 import socket
 from urllib.parse import urlparse
 
+from .limits import CapacityError
+
 _IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 
-# Hostnames we refuse without even resolving (defence in depth for the browser
-# route filter, which can't afford a DNS lookup per subresource).
+# Hostnames refused before connection-time DNS resolution.
 _BLOCKED_HOSTNAMES = {"localhost", "localhost.localdomain", "ip6-localhost"}
+_dns_active = 0
+_DNS_MAXIMUM = 32
 
 
 class BlockedURLError(ValueError):
@@ -23,14 +27,9 @@ class BlockedURLError(ValueError):
 
 
 def _is_blocked_ip(ip: _IPAddress) -> bool:
-    return (
-        ip.is_private
-        or ip.is_loopback
-        or ip.is_link_local
-        or ip.is_multicast
-        or ip.is_reserved
-        or ip.is_unspecified
-    )
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        return _is_blocked_ip(ip.ipv4_mapped)
+    return not ip.is_global or ip.is_multicast or ip.is_reserved
 
 
 def host_is_obviously_private(host: str) -> bool:
@@ -47,30 +46,77 @@ def host_is_obviously_private(host: str) -> bool:
         return False  # not an IP literal — a name we don't resolve here
 
 
+def parse_url(url: str) -> tuple[str, int]:
+    """Validate authority/scheme without resolving DNS on the event loop."""
+    if len(url) > 8192 or any(ord(c) <= 32 or ord(c) == 127 for c in url) or "\\" in url:
+        raise BlockedURLError("invalid URL characters or length")
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise BlockedURLError("invalid URL authority") from exc
+    if parsed.scheme not in ("http", "https") or not host:
+        raise BlockedURLError("URL must have an http(s) scheme and host")
+    if parsed.username is not None or parsed.password is not None:
+        raise BlockedURLError("URL credentials are not supported")
+    if port == 0 or "%" in host:
+        raise BlockedURLError("invalid URL port or scoped address")
+    return host, port or (443 if parsed.scheme == "https" else 80)
+
+
+def check_addresses(host: str, infos: list, *, allow_private: bool) -> list[str]:
+    if not infos:
+        raise BlockedURLError("DNS returned no addresses")
+    addresses = list(dict.fromkeys(info[4][0] for info in infos))
+    if not allow_private and any(_is_blocked_ip(ipaddress.ip_address(ip)) for ip in addresses):
+        raise BlockedURLError("destination is not a public address")
+    return addresses
+
+
+async def resolve_host(host: str, port: int, *, allow_private: bool = False) -> list[str]:
+    """Resolve once, reject mixed/private answers, return literal addresses to connect."""
+    if not allow_private and host.lower().rstrip(".") in _BLOCKED_HOSTNAMES:
+        raise BlockedURLError("blocked hostname")
+    global _dns_active
+    if _dns_active >= _DNS_MAXIMUM:
+        raise CapacityError("DNS capacity reached; retry later")
+    _dns_active += 1
+
+    def finished(task):
+        global _dns_active
+        _dns_active -= 1
+        # Retrieve errors even when the original waiter timed out.
+        if not task.cancelled():
+            task.exception()
+
+    task = asyncio.create_task(
+        asyncio.get_running_loop().getaddrinfo(
+            host, port, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP
+        )
+    )
+    task.add_done_callback(finished)
+    try:
+        # Retain DNS admission until the resolver actually finishes, independently
+        # of a cancelled fetch or tool deadline.
+        infos = await asyncio.shield(task)
+    except socket.gaierror as exc:
+        raise BlockedURLError("DNS resolution failed") from exc
+    return check_addresses(host, infos, allow_private=allow_private)
+
+
 def validate_url(url: str, *, allow_private: bool = False) -> str:
     """Return url if safe to fetch, else raise BlockedURLError.
 
     Resolves DNS and rejects if *any* resolved address is internal.
     """
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        raise BlockedURLError(f"unsupported scheme: {parsed.scheme!r}")
-    host = parsed.hostname
-    if not host:
-        raise BlockedURLError("URL has no host")
-    if allow_private:
-        return url
-    if host.lower() in _BLOCKED_HOSTNAMES:
-        raise BlockedURLError(f"blocked host {host!r}")
-
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    host, port = parse_url(url)
+    if not allow_private and host.lower().rstrip(".") in _BLOCKED_HOSTNAMES:
+        raise BlockedURLError("blocked hostname")
     try:
         infos = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
     except socket.gaierror as exc:
         raise BlockedURLError(f"DNS resolution failed for {host!r}") from exc
 
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        if _is_blocked_ip(ip):
-            raise BlockedURLError(f"blocked internal address {ip} for host {host!r}")
+    check_addresses(host, infos, allow_private=allow_private)
     return url

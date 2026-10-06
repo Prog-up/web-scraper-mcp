@@ -11,37 +11,38 @@ from ..config import settings
 from ..fetch import fetch
 from ..parse import extract_links, title_of, to_markdown
 from ..runtime import pool
+from ..work import work
 
 
 def register(mcp: FastMCP) -> None:
     @mcp.tool
     async def scrape(
-        url: Annotated[str, Field(description="The URL to scrape (http/https).")],
+        url: Annotated[str, Field(max_length=8192, description="The URL to scrape (http/https).")],
         render: Annotated[
             bool, Field(description="Force a headless browser render (for JS-heavy pages).")
         ] = False,
         include_links: Annotated[
-            bool, Field(description="Also return all links found on the page.")
+            bool, Field(description="Return up to 1,000 links, at most 256 KB total.")
         ] = False,
         include_raw_html: Annotated[
             bool, Field(description="Also return the raw HTML (large).")
         ] = False,
     ) -> dict:
-        """Scrape a single URL into clean markdown (boilerplate/ads stripped).
+        """Scrape a public URL into main-content markdown with optional links.
 
-        Tries a fast static fetch first and falls back to a stealth headless
-        browser automatically when the page looks JS-gated.
+        Fetches static HTML first. If rendering is explicitly enabled, sparse
+        pages can fall back to the isolated, sandboxed browser.
         """
         result = await fetch(url, render=render, settings=settings, pool=pool)
         out: dict = {
             "url": result.url,
             "status": result.status,
             "via": result.via,
-            "title": title_of(result.html),
-            "markdown": to_markdown(result.html, result.url),
+            "title": await work.run(title_of, result.html),
+            "markdown": await work.run(to_markdown, result.html, result.url),
         }
         if include_links:
-            out["links"] = extract_links(result.html, result.url)
+            out["links"] = await work.run(extract_links, result.html, result.url)
         if include_raw_html:
             out["html"] = result.html
         return out

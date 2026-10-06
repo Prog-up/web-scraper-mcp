@@ -1,31 +1,28 @@
-name: Security Scan
-
+name: Container regression scan
 on:
-  push:
-    branches:
-      - main
-      - fix/security-cves
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
+permissions:
+  contents: read
 jobs:
-  trivy-scan:
-    name: Build and Scan Docker Image
+  scan:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -t web-scraper-mcp:test .
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build -t web-scraper-mcp:test .
+      - name: Test shipped sandbox and denied destinations
+        run: |
+          for fixture in scripts/browser_regression.py scripts/browser_features.py; do
+            docker run --rm -i --init --network none --read-only \
+              --tmpfs /tmp:size=256m --shm-size=256m --memory=1536m --cpus=2 --pids-limit=256 \
+              --cap-drop ALL --cap-add SYS_CHROOT \
+              --security-opt no-new-privileges:true \
+              --security-opt seccomp=deploy/chromium-seccomp.json \
+              web-scraper-mcp:test python - < "$fixture"
+          done
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: 'web-scraper-mcp:test'
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+          image-ref: web-scraper-mcp:test
+          exit-code: '1'
+          ignore-unfixed: false
+          severity: HIGH,CRITICAL

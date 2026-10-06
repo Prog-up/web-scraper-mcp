@@ -1,159 +1,306 @@
-"""Shared fetch layer reused by every tool.
-
-Static-first: try httpx; fall back to a headless browser only when the static
-HTML looks empty / JS-gated. Enforces robots.txt, per-domain rate limiting,
-SSRF validation on every redirect hop, and response-size caps.
-"""
+"""Bounded, static-first fetching with destination policy on every HTTP hop."""
 
 from __future__ import annotations
 
 import asyncio
 import time
 import urllib.robotparser
-from contextlib import suppress
-from dataclasses import dataclass
-from urllib.parse import urljoin, urlparse
+import zlib
+from collections import OrderedDict
+from dataclasses import dataclass, field
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
 from .browser import BrowserPool
 from .config import Settings
-from .security import BlockedURLError, validate_url
+from .security import BlockedURLError, parse_url
+from .transport import public_client
+from .work import work
 
-# Below this many characters of extracted text we assume the page is JS-gated
-# and worth a browser render. ponytail: crude heuristic, tune if it misfires.
-_MIN_STATIC_TEXT = 200
+
+class FetchError(ValueError):
+    """A fetch failed status, content, time or resource policy."""
 
 
 @dataclass
 class FetchResult:
-    url: str  # final URL after redirects
+    url: str
     status: int
     html: str
-    via: str  # "static" | "browser"
+    via: str
 
 
-# --- per-domain rate limiting -------------------------------------------------
-_domain_last: dict[str, float] = {}
-_domain_locks: dict[str, asyncio.Lock] = {}
+@dataclass
+class HTTPResult:
+    url: str
+    status: int
+    headers: dict[str, str]
+    body: bytes
+    cookies: list[tuple[str, str]] = field(default_factory=list)
+
+    def text(self) -> str:
+        response = httpx.Response(self.status, headers=self.headers, content=self.body)
+        return response.text
 
 
-def _lock_for(domain: str) -> asyncio.Lock:
-    lock = _domain_locks.get(domain)
-    if lock is None:
-        lock = _domain_locks[domain] = asyncio.Lock()
-    return lock
+@dataclass
+class DomainState:
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    last: float = 0
+    expires: float = 0
+    users: int = 0
 
 
-async def _rate_limit(domain: str, delay: float) -> None:
-    async with _lock_for(domain):
-        wait = delay - (time.monotonic() - _domain_last.get(domain, 0.0))
-        if wait > 0:
-            await asyncio.sleep(wait)
-        _domain_last[domain] = time.monotonic()
+_domain_states: OrderedDict[str, DomainState] = OrderedDict()
+_robots_cache: OrderedDict[str, tuple[float, urllib.robotparser.RobotFileParser]] = OrderedDict()
 
 
-# --- robots.txt ---------------------------------------------------------------
-# We fetch robots.txt ourselves (with our UA) and parse the text, rather than
-# letting RobotFileParser.read() do its own urllib fetch — that uses urllib's
-# default UA, which many sites 403, and a 403 is then read as "disallow all".
-# A non-200 robots.txt (404/403/redirect) => treat as allowed (common practice).
-_robots_cache: dict[str, urllib.robotparser.RobotFileParser] = {}
-_robots_locks: dict[str, asyncio.Lock] = {}
+def origin(url: str) -> str:
+    host, port = parse_url(url)
+    authority = f"[{host.lower()}]" if ":" in host else host.lower()
+    return f"{urlsplit(url).scheme}://{authority}:{port}"
 
 
-async def _robots_for(base: str, s: Settings) -> urllib.robotparser.RobotFileParser:
+async def _rate_limit(url: str, s: Settings) -> None:
+    key = origin(url)
+    now = time.monotonic()
+    for name, existing in list(_domain_states.items()):
+        if not existing.users and existing.expires <= now:
+            del _domain_states[name]
+    state = _domain_states.get(key)
+    if state is None:
+        if len(_domain_states) >= s.cache_entries:
+            inactive = next((k for k, v in _domain_states.items() if not v.users), None)
+            if inactive is None:
+                raise FetchError("domain rate-limit capacity reached")
+            del _domain_states[inactive]
+        state = _domain_states[key] = DomainState()
+    _domain_states.move_to_end(key)
+    state.users += 1
+    try:
+        async with state.lock:
+            wait = s.per_domain_delay_s - (time.monotonic() - state.last)
+            if wait > 0:
+                await asyncio.sleep(wait)
+            state.last = time.monotonic()
+            state.expires = state.last + s.cache_ttl_s
+    finally:
+        state.users -= 1
+
+
+async def read_body(response: httpx.Response, maximum: int) -> bytes:
+    """Bound wire and decoded bytes; compressed output never allocates past the cap."""
+    if response.is_stream_consumed:
+        if len(response.content) > maximum:
+            raise FetchError("response exceeds byte limit")
+        return response.content
+    encoding = response.headers.get("content-encoding", "identity").lower()
+    decoder = None
+    if encoding == "gzip":
+        decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    elif encoding == "deflate":
+        decoder = zlib.decompressobj()
+    elif encoding not in ("", "identity"):
+        raise FetchError("unsupported response compression")
+    body = bytearray()
+    wire_bytes = 0
+    try:
+        async for chunk in response.aiter_raw(chunk_size=min(maximum + 1, 16_384)):
+            wire_bytes += len(chunk)
+            if wire_bytes > maximum:
+                raise FetchError("response exceeds wire byte limit")
+            decoded = decoder.decompress(chunk, maximum - len(body) + 1) if decoder else chunk
+            if len(body) + len(decoded) > maximum:
+                raise FetchError("response exceeds decoded byte limit")
+            body.extend(decoded)
+        if decoder and (not decoder.eof or decoder.unused_data):
+            raise FetchError("invalid or concatenated compressed response")
+    except zlib.error as exc:
+        raise FetchError("invalid response compression") from exc
+    return bytes(body)
+
+
+async def _robots_for(url: str, s: Settings) -> urllib.robotparser.RobotFileParser:
+    base = origin(url)
+    now = time.monotonic()
     cached = _robots_cache.get(base)
-    if cached is not None:
-        return cached
-    lock = _robots_locks.setdefault(base, asyncio.Lock())
-    async with lock:
-        cached = _robots_cache.get(base)
-        if cached is not None:
-            return cached
-        rp = urllib.robotparser.RobotFileParser()
-        robots_url = urljoin(base, "/robots.txt")
-        try:
-            validate_url(robots_url, allow_private=s.allow_private_networks)
-            async with httpx.AsyncClient(
-                timeout=s.request_timeout_s,
-                headers={"User-Agent": s.user_agent},
-                follow_redirects=False,
-            ) as client:
-                resp = await client.get(robots_url)
-            if resp.status_code == 200:
-                rp.parse(resp.text.splitlines())
-            else:
-                rp.allow_all = True  # type: ignore[attr-defined]
-        except Exception:  # noqa: BLE001 - unreachable/invalid robots => allow
-            rp.allow_all = True  # type: ignore[attr-defined]
-        _robots_cache[base] = rp
-        return rp
+    if cached and cached[0] > now:
+        _robots_cache.move_to_end(base)
+        return cached[1]
+    result = await request_http(urljoin(base, "/robots.txt"), s, policy=False, maximum=64_000)
+    rp = urllib.robotparser.RobotFileParser()
+    if result.status == 200:
+        rp.parse(result.text().splitlines())
+    elif result.status in (404, 410):
+        rp.parse(["User-agent: *", "Allow: /"])
+    else:
+        rp.parse(["User-agent: *", "Disallow: /"])
+    _robots_cache[base] = (now + s.cache_ttl_s, rp)
+    _robots_cache.move_to_end(base)
+    while len(_robots_cache) > s.cache_entries:
+        _robots_cache.popitem(last=False)
+    return rp
 
 
-async def _robots_allows(url: str, s: Settings) -> bool:
-    parsed = urlparse(url)
-    base = f"{parsed.scheme}://{parsed.netloc}"
-    rp = await _robots_for(base, s)
-    return rp.can_fetch(s.user_agent, url)
+async def check_policy(url: str, s: Settings) -> None:
+    parse_url(url)
+    if s.respect_robots:
+        rp = await _robots_for(url, s)
+        if not rp.can_fetch(s.user_agent, url):
+            raise BlockedURLError("destination disallowed by robots.txt")
+    await _rate_limit(url, s)
 
 
-# --- static fetch with manual redirect validation ----------------------------
-async def _fetch_static(url: str, s: Settings) -> FetchResult:
-    headers = {"User-Agent": s.user_agent}
-    async with httpx.AsyncClient(
-        follow_redirects=False, timeout=s.request_timeout_s, headers=headers
-    ) as client:
+async def request_http(
+    url: str,
+    s: Settings,
+    *,
+    policy: bool = True,
+    maximum: int | None = None,
+    headers: dict[str, str] | None = None,
+    method: str = "GET",
+    content: bytes | None = None,
+    allowed_host: str | None = None,
+    write_origin: str | None = None,
+) -> HTTPResult:
+    if method not in ("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"):
+        raise FetchError("unsupported HTTP method")
+    if content and len(content) > s.max_request_bytes:
+        raise FetchError("request body exceeds byte limit")
+    maximum = maximum or s.max_response_bytes
+    async with asyncio.timeout(s.request_timeout_s), public_client(s) as client:
         current = url
-        for _ in range(s.max_redirects + 1):
-            validate_url(current, allow_private=s.allow_private_networks)
-            resp = await client.get(current)
-            if resp.is_redirect and resp.next_request is not None:
-                current = str(resp.next_request.url)
-                continue
-            # ponytail: post-hoc size cap; stream-abort if you need hard memory bounds.
-            html = resp.text[: s.max_response_bytes]
-            return FetchResult(url=str(resp.url), status=resp.status_code, html=html, via="static")
-    raise BlockedURLError("too many redirects")
+        request_headers = dict(headers or {})
+        request_headers["accept-encoding"] = "identity"
+        cookies: list[tuple[str, str]] = []
+        for hop in range(s.max_redirects + 1):
+            parse_url(current)
+            if allowed_host:
+                from .parse import same_host
+
+                if not same_host(current, allowed_host):
+                    raise BlockedURLError("destination left permitted host")
+            if method not in ("GET", "HEAD") and write_origin != origin(current):
+                raise BlockedURLError("write destination left explicitly authorized origin")
+            if policy:
+                await check_policy(current, s)
+            else:
+                await _rate_limit(current, s)
+            async with client.stream(
+                method, current, headers=request_headers, content=content
+            ) as response:
+                for cookie in response.headers.get_list("set-cookie"):
+                    if len(cookies) < 32:
+                        cookies.append((str(response.url), cookie))
+                if response.is_redirect:
+                    if hop == s.max_redirects:
+                        raise FetchError("too many redirects")
+                    location = response.headers.get("location")
+                    if not location:
+                        raise FetchError("redirect has no location")
+                    target = urljoin(current, location)
+                    parse_url(target)
+                    if origin(target) != origin(current):
+                        request_headers = {
+                            k: v
+                            for k, v in request_headers.items()
+                            if k.lower() not in ("authorization", "cookie")
+                        }
+                    if (
+                        response.status_code == 303
+                        and method != "HEAD"
+                        or (response.status_code in (301, 302) and method == "POST")
+                    ):
+                        method, content = "GET", None
+                        request_headers = {
+                            k: v
+                            for k, v in request_headers.items()
+                            if k.lower() not in ("content-type", "content-length")
+                        }
+                    current = target
+                    continue
+                body = await read_body(response, maximum)
+                # Bodies have been decompressed, never forward stale lengths/encodings.
+                safe_headers = {
+                    k: v
+                    for k, v in response.headers.items()
+                    if k
+                    not in ("content-encoding", "content-length", "transfer-encoding", "connection")
+                }
+                return HTTPResult(
+                    str(response.url), response.status_code, safe_headers, body, cookies
+                )
+    raise FetchError("redirect limit exceeded")
 
 
-async def _fetch_browser(url: str, s: Settings, pool: BrowserPool) -> FetchResult:
+def require_html(result: HTTPResult) -> None:
+    if not 200 <= result.status < 300:
+        raise FetchError(f"source returned HTTP {result.status}")
+    content_type = result.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+    if content_type not in ("text/html", "application/xhtml+xml", "text/plain"):
+        raise FetchError("source is not HTML or plain text")
+
+
+async def _fetch_static(url: str, s: Settings, allowed_host: str | None = None) -> FetchResult:
+    result = await request_http(url, s, allowed_host=allowed_host)
+    require_html(result)
+    return FetchResult(result.url, result.status, result.text(), "static")
+
+
+async def _fetch_browser(
+    url: str, s: Settings, pool: BrowserPool, allowed_host: str | None = None
+) -> FetchResult:
     async with pool.page() as page:
-        resp = await page.goto(
-            url, timeout=s.request_timeout_s * 1000, wait_until="domcontentloaded"
-        )
+        await pool.navigate(page, url, allowed_host=allowed_host)
+        # Wait for delayed JS content, within a fixed readiness budget. Short pages
+        # are still valid when the timeout expires; no unbounded network-idle wait.
         try:
-            html = await page.content()
-        except Exception:
-            # Settle down client-side navigations / redirects
-            with suppress(Exception):
-                await page.wait_for_load_state("load", timeout=5000)
-            html = await page.content()
+            await page.wait_for_function(
+                "document.body && document.body.innerText.trim().length >= 200",
+                timeout=s.browser_ready_timeout_s * 1000,
+            )
+        except Exception as exc:
+            from playwright.async_api import TimeoutError as PlaywrightTimeout
 
-        html = html[: s.max_response_bytes]
-        return FetchResult(
-            url=page.url, status=resp.status if resp else 0, html=html, via="browser"
+            if not isinstance(exc, PlaywrightTimeout):
+                raise
+        state = pool.page_state(page)
+        if state.error:
+            raise FetchError(state.error)
+        # Check size inside the renderer before allocating/returning a serialized DOM.
+        html = await page.evaluate(
+            """maximum => {
+            const html = document.documentElement.outerHTML;
+            if (new TextEncoder().encode(html).byteLength > maximum) return null;
+            return html;
+        }""",
+            s.max_response_bytes,
         )
+        if html is None:
+            raise FetchError("rendered document exceeds byte limit")
+        return FetchResult(state.final_url or page.url, 200, html, "browser")
 
 
 def _looks_gated(html: str) -> bool:
     import trafilatura
 
-    text = trafilatura.extract(html) or ""
-    return len(text.strip()) < _MIN_STATIC_TEXT
+    return len((trafilatura.extract(html) or "").strip()) < 200
 
 
-async def fetch(url: str, *, render: bool, settings: Settings, pool: BrowserPool) -> FetchResult:
-    """Fetch a URL through the full safety pipeline and return raw HTML."""
-    validate_url(url, allow_private=settings.allow_private_networks)
-    if settings.respect_robots and not await _robots_allows(url, settings):
-        raise BlockedURLError(f"disallowed by robots.txt: {url}")
-    await _rate_limit(urlparse(url).netloc, settings.per_domain_delay_s)
-
-    if render:
-        return await _fetch_browser(url, settings, pool)
-
-    result = await _fetch_static(url, settings)
-    if _looks_gated(result.html):
-        return await _fetch_browser(url, settings, pool)
-    return result
+async def fetch(
+    url: str,
+    *,
+    render: bool,
+    settings: Settings,
+    pool: BrowserPool,
+    allowed_host: str | None = None,
+) -> FetchResult:
+    parse_url(url)
+    async with pool.fetch_slots.slot(), asyncio.timeout(settings.request_timeout_s):
+        if render:
+            return await _fetch_browser(url, settings, pool, allowed_host)
+        result = await _fetch_static(url, settings, allowed_host)
+        if settings.browser_enabled and await work.run(_looks_gated, result.html):
+            return await _fetch_browser(result.url, settings, pool, allowed_host)
+        return result

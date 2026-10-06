@@ -5,9 +5,8 @@ deterministic and runs offline / in CI. They span page types on purpose:
 extractors converge on articles but diverge on listing/forum/product pages —
 the scorecard is meant to expose that.
 
-For a larger run, point `--live` at real URLs or wire in the public datasets
-(Scrapinghub article-extraction-benchmark, WCXB, ScrapeGraphAI-100k); the metric
-below is the same token-level F1 those benchmarks use for main-content quality.
+For a larger run, add fixtures or integrate a separately verified dataset.
+This module does not fetch live URLs or provide a --live CLI option.
 """
 
 from __future__ import annotations

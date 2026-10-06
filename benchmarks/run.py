@@ -13,10 +13,16 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import platform
+import shutil
 import statistics
+import subprocess
 import sys
 from collections import defaultdict
+from datetime import UTC, datetime
+from importlib.metadata import version
 from pathlib import Path
 
 from selectolax.parser import HTMLParser
@@ -85,12 +91,44 @@ def run(comparators: dict[str, object]) -> dict:
         )
         for name in comparators
     }
-    return {"rows": rows, "by_page_type": summary, "overall": overall}
+    root = Path(__file__).resolve().parents[1]
+    git = shutil.which("git")
+    if not git:
+        raise RuntimeError("Git is required to record benchmark provenance")
+    revision = subprocess.run(  # noqa: S603 - fixed, read-only Git command
+        [git, "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=True
+    ).stdout.strip()
+    dirty = bool(
+        subprocess.run(  # noqa: S603 - fixed, read-only Git command
+            [git, "status", "--porcelain"], cwd=root, capture_output=True, text=True, check=True
+        ).stdout.strip()
+    )
+    metadata = {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "revision": revision,
+        "working_tree_dirty": dirty,
+        "python": platform.python_version(),
+        "dependencies": {name: version(name) for name in ("trafilatura", "selectolax")},
+        "fixtures_sha256": hashlib.sha256(
+            Path(__file__).with_name("datasets.py").read_bytes()
+        ).hexdigest(),
+        "scope": "bundled offline parser fixtures only",
+    }
+    return {"metadata": metadata, "rows": rows, "by_page_type": summary, "overall": overall}
 
 
 def _scorecard_md(result: dict, comparators: list[str]) -> str:
     lines = ["# Scraper Benchmark Scorecard", ""]
     lines.append("Token-level F1 of main-content extraction vs. gold. Higher is better.")
+    metadata = result["metadata"]
+    lines += [
+        "",
+        f"Generated: {metadata['generated_at']}. Scope: {metadata['scope']}.",
+        f"Source: `{metadata['revision']}`; working tree dirty: {metadata['working_tree_dirty']}.",
+        f"Python: {metadata['python']}; dependencies: `{metadata['dependencies']}`.",
+        f"Fixture SHA-256: `{metadata['fixtures_sha256']}`.",
+        "This benchmark does not evaluate network fetching, rendering, models, or schema accuracy.",
+    ]
     lines.append("")
     header = "| page type | n | " + " | ".join(comparators) + " |"
     sep = "|---|---|" + "---|" * len(comparators)
