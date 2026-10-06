@@ -203,8 +203,10 @@ and locked dependencies. Stable version tags matching the package version on the
 trigger a release. Release builds scan the exact local image before any registry
 push. Docker Hub tags are immutable, so releases publish a new version and full
 commit tag; they do not overwrite the historical `latest` tag. HIGH/CRITICAL findings, including unfixed OS findings, block
-publication. Actions and base images are pinned. GitLab validates source and
-images; it does not publish a competing `latest` tag.
+publication, except for the explicitly approved, exact package/CVE inventory for
+[release 1.1.0](docs/releases/1.1.0.md), expiring 13 October 2026. Fixable and
+additional findings remain blocked; full reports are retained. Actions and base
+images are pinned. GitLab validates source and images; it does not publish a competing `latest` tag.
 
 The canonical release workflow is GitHub → Docker Hub, configured by
 `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets. Only a successful
@@ -214,7 +216,7 @@ image using the exact repository and ref that produced it:
 
 ```bash
 IMAGE='docker.io/YOUR_NAMESPACE/web-scraper-mcp@sha256:YOUR_DIGEST'
-IDENTITY='https://github.com/YOUR_OWNER/YOUR_REPO/.github/workflows/docker-publish.yml@refs/heads/main'
+IDENTITY='https://github.com/YOUR_OWNER/YOUR_REPO/.github/workflows/docker-publish.yml@refs/tags/1.1.0'
 cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity "$IDENTITY" "$IMAGE"
 cosign verify-attestation --type spdxjson \

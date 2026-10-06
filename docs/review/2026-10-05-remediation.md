@@ -101,8 +101,8 @@ done
 
 ## Release blockers and remaining acceptance work
 
-**The final image is not release-ready.** Despite a fresh Debian 13.7 package
-update, Trivy reports **59 HIGH and one CRITICAL package findings**, covering
+**At this review snapshot, the full vulnerability scan blocked release.** Despite
+a fresh Debian 13.7 package update, Trivy reports **59 HIGH and one CRITICAL package findings**, covering
 **22 distinct CVEs**, with no fixed Debian versions listed. The critical finding
 is `CVE-2026-6653` in `libxml2`. Removing its Mesa dependency chain also removed
 `libgbm`, which Chromium needs; the working dependency chain is retained.
@@ -142,5 +142,6 @@ automatic approval review initially rejected the persistent policy change.
 [Profile provenance](../../deploy/README.md) records its upstream commit and
 existing namespace allowance. User-owned untracked experiments/text files and
 the original Trivy report were preserved. Local `server.log` remains on disk.
-The implementation and candidate metadata are committed on the review branch;
-publication is awaiting explicit approval of the documented release exception.
+The implementation and candidate metadata were committed on the review branch.
+The user subsequently explicitly approved the scoped 1.1.0 exception on 6 October
+2026; see [release notes](../releases/1.1.0.md) for its exact inventory and expiry.
