@@ -1,12 +1,9 @@
-"""extract — fetch a page and pull structured data with an LLM.
-
-Uses Anthropic tool-use: the caller's JSON schema becomes the tool's
-input_schema and we force the model to call it, so the result conforms to the
-schema. Needs ANTHROPIC_API_KEY.
-"""
+"""Fetch a page and return locally validated structured model output."""
 
 from __future__ import annotations
 
+import asyncio
+import json
 from typing import Annotated
 
 from fastmcp import FastMCP
@@ -14,11 +11,21 @@ from pydantic import Field
 
 from ..config import settings
 from ..fetch import fetch
+from ..llm import (
+    UNTRUSTED_SYSTEM,
+    input_budget,
+    model_slots,
+    ollama_chat,
+    provider_for,
+    truncate_bytes,
+    validate_data,
+    validate_schema,
+)
 from ..parse import to_markdown
 from ..runtime import pool
+from ..work import work
 
-# Cap the markdown we send to the model (~25k tokens). ponytail: simple char cap.
-_MAX_INPUT_CHARS = 100_000
+_MAX_INPUT_CHARS = 100_000  # Backward-compatible helper ceiling; actual requests use byte budgets.
 
 
 def _truncate(md: str) -> str:
@@ -26,114 +33,130 @@ def _truncate(md: str) -> str:
 
 
 async def _llm_extract(markdown: str, schema: dict | None, prompt: str | None) -> dict:
+    try:
+        await work.run(validate_schema, schema)
+    except ValueError:
+        return {"error": "invalid or unsupported JSON schema"}
     model = settings.extract_model
+    provider = provider_for(model, settings.extract_provider)
     instruction = prompt or "Extract the requested structured data from the page content."
+    overhead = len(json.dumps(schema or {}).encode()) + len(instruction.encode())
+    remaining = (input_budget(settings) - overhead - 512) // 2
+    if remaining < 512:
+        return {"error": "prompt and schema exceed model input budget"}
+    content = json.dumps(
+        {"task": instruction, "untrusted_page": truncate_bytes(markdown, remaining)},
+        ensure_ascii=False,
+    )
+    if len(content.encode()) + len(json.dumps(schema or {}).encode()) > input_budget(settings):
+        return {"error": "encoded model input exceeds budget"}
+    async with model_slots(settings).slot(), asyncio.timeout(settings.tool_timeout_s):
+        if provider == "anthropic":
+            from anthropic import AsyncAnthropic
 
-    if model.startswith("claude-"):
-        from anthropic import AsyncAnthropic
-
-        client = AsyncAnthropic(api_key=settings.anthropic_api_key)
-        if schema is not None:
-            tool = {
-                "name": "extract",
-                "description": instruction,
-                "input_schema": schema,
-            }
-            msg = await client.messages.create(  # type: ignore[call-overload]
-                model=model,
-                max_tokens=2048,
-                tools=[tool],
-                tool_choice={"type": "tool", "name": "extract"},
-                messages=[{"role": "user", "content": f"{instruction}\n\n---\n{markdown}"}],
-            )
-            for block in msg.content:
-                if block.type == "tool_use":
-                    return {"data": block.input}
-            return {"error": "model did not return structured output"}
-
-        # No schema: free-form text answer.
-        msg = await client.messages.create(
-            model=model,
-            max_tokens=2048,
-            messages=[{"role": "user", "content": f"{instruction}\n\n---\n{markdown}"}],
-        )
-        text = "".join(b.text for b in msg.content if b.type == "text")
-        return {"text": text}
-
-    # Ollama execution path
-    import json
-
-    import httpx
-
-    url = settings.ollama_url("/api/chat")
-    messages = [{"role": "user", "content": f"{instruction}\n\n---\n{markdown}"}]
-    payload: dict = {
-        "model": model,
-        "messages": messages,
-        "stream": False,
-        "options": {"num_ctx": 32768},
-    }
-
-    if schema is not None:
-        tool = {
-            "type": "function",
-            "function": {
-                "name": "extract",
-                "description": instruction,
-                "parameters": schema,
+            async with (
+                httpx_client() as http_client,
+                AsyncAnthropic(
+                    api_key=settings.anthropic_api_key,
+                    http_client=http_client,
+                    max_retries=0,
+                ) as client,
+            ):
+                kwargs: dict = {
+                    "model": model,
+                    "max_tokens": settings.llm_output_tokens,
+                    "system": UNTRUSTED_SYSTEM,
+                    "messages": [{"role": "user", "content": content}],
+                }
+                if schema is not None:
+                    kwargs["tools"] = [
+                        {"name": "extract", "description": instruction, "input_schema": schema}
+                    ]
+                    kwargs["tool_choice"] = {"type": "tool", "name": "extract"}
+                msg = await client.messages.create(**kwargs)
+            if msg.stop_reason not in ("end_turn", "tool_use"):
+                return {"error": "model output was incomplete or truncated"}
+            if schema is not None:
+                for block in msg.content:
+                    if block.type == "tool_use" and block.name == "extract":
+                        return await work.run(validate_data, block.input, schema)
+                return {"error": "model did not return the requested tool call"}
+            return {"text": "".join(b.text for b in msg.content if b.type == "text")}
+        payload: dict = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": UNTRUSTED_SYSTEM},
+                {"role": "user", "content": content},
+            ],
+            "stream": False,
+            "options": {
+                "num_ctx": settings.ollama_num_ctx,
+                "num_predict": settings.llm_output_tokens,
             },
         }
-        payload["tools"] = [tool]
-
-    async with httpx.AsyncClient(timeout=120.0) as http_client:
-        resp = await http_client.post(url, json=payload)
-
-        resp.raise_for_status()
-        data = resp.json()
-
-    message = data.get("message", {})
-
-    if schema is not None:
-        tool_calls = message.get("tool_calls", [])
-        if tool_calls:
-            fn_info = tool_calls[0].get("function", {})
-            return {"data": fn_info.get("arguments", {})}
-
-        # Fallback: if model returned raw JSON in content instead of a tool call
+        if schema is not None:
+            payload["tools"] = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "extract",
+                        "description": instruction,
+                        "parameters": schema,
+                    },
+                }
+            ]
+        message = await ollama_chat(settings, payload)
+        if schema is None:
+            return {"text": message.get("content", "")}
+        calls = message.get("tool_calls", [])
+        if calls:
+            function = calls[0].get("function", {})
+            if function.get("name") != "extract" or not isinstance(function.get("arguments"), dict):
+                return {"error": "model returned an invalid extraction tool call"}
+            return await work.run(validate_data, function["arguments"], schema)
         content = message.get("content", "").strip()
+        if content.startswith("```"):
+            content = content.split("```", 2)[1]
+            if content.startswith("json"):
+                content = content[4:]
         try:
-            if content.startswith("```"):
-                content = content.split("```", 2)[1]
-                if content.startswith("json"):
-                    content = content[4:]
-            parsed_json = json.loads(content.strip())
-            return {"data": parsed_json}
-        except Exception:
-            return {"error": "Ollama model did not return structured tool call or valid JSON"}
+            data = json.loads(content.strip())
+        except (ValueError, RecursionError):
+            return {"error": "model did not return valid JSON"}
+        return await work.run(validate_data, data, schema)
 
-    return {"text": message.get("content", "")}
+
+def httpx_client():
+    import httpx
+
+    return httpx.AsyncClient(
+        trust_env=False,
+        proxy=settings.egress_proxy_url,
+        timeout=httpx.Timeout(settings.tool_timeout_s, connect=min(settings.request_timeout_s, 10)),
+    )
 
 
 def register(mcp: FastMCP) -> None:
     @mcp.tool
     async def extract(
-        url: Annotated[str, Field(description="URL to extract from.")],
-        json_schema: Annotated[
-            dict | None,
-            Field(description="JSON Schema describing the fields to extract (recommended)."),
-        ] = None,
+        url: Annotated[str, Field(max_length=8192, description="URL to extract from.")],
+        json_schema: Annotated[dict | None, Field(description="JSON Schema 2020-12.")] = None,
         prompt: Annotated[
-            str | None, Field(description="Natural-language extraction instruction.")
+            str | None, Field(max_length=4096, description="Extraction task.")
         ] = None,
         render: Annotated[bool, Field(description="Force a browser render.")] = False,
     ) -> dict:
-        """Extract structured data (JSON matching json_schema) or a text answer from a page."""
-        if settings.extract_model.startswith("claude-") and not settings.anthropic_api_key:
-            return {"error": "ANTHROPIC_API_KEY is not set — extract is unavailable."}
+        """Extract data matching JSON Schema, or a text answer, from a page."""
+        if (
+            provider_for(settings.extract_model, settings.extract_provider) == "anthropic"
+            and not settings.anthropic_api_key
+        ):
+            return {"error": "ANTHROPIC_API_KEY is required for the Anthropic provider"}
         if json_schema is None and prompt is None:
-            return {"error": "provide json_schema and/or prompt."}
+            return {"error": "provide json_schema and/or prompt"}
+        await work.run(validate_schema, json_schema)
         result = await fetch(url, render=render, settings=settings, pool=pool)
-        markdown = _truncate(to_markdown(result.html, result.url))
+        markdown = await work.run(to_markdown, result.html, result.url)
         out = await _llm_extract(markdown, json_schema, prompt)
         out["url"] = result.url
         return out

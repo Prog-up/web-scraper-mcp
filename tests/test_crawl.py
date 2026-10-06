@@ -49,4 +49,4 @@ def test_crawl_seed_failure(monkeypatch):
     job = crawlmod.CrawlJob(job_id="t4")
     asyncio.run(crawlmod._run(job, "https://s/a", max_pages=100, max_depth=5, same_domain=True))
     assert job.status == "failed"
-    assert "Connection refused" in (job.error or "")
+    assert "Failed to fetch seed URL (ValueError)" == job.error

@@ -1,0 +1,73 @@
+services:
+  scraper:
+    build: .
+    environment:
+      SCRAPER_AUTH_TOKEN: ${SCRAPER_AUTH_TOKEN:?Set SCRAPER_AUTH_TOKEN}
+      SCRAPER_HOST: 0.0.0.0
+      SCRAPER_EGRESS_PROXY_URL: http://egress:8080
+      SCRAPER_BROWSER_ENABLED: "true"
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SCRAPER_EXTRACT_MODEL: ${SCRAPER_EXTRACT_MODEL:-llama3.1}
+      SCRAPER_RESEARCH_MODEL: ${SCRAPER_RESEARCH_MODEL:-llama3.1}
+      SCRAPER_OLLAMA_HOST: ${OLLAMA_HOST:-${SCRAPER_OLLAMA_HOST:-http://ollama:11434}}
+      SCRAPER_EXTRACT_PROVIDER: ${SCRAPER_EXTRACT_PROVIDER:-auto}
+      SCRAPER_RESEARCH_PROVIDER: ${SCRAPER_RESEARCH_PROVIDER:-auto}
+      SCRAPER_OLLAMA_THINK: ${SCRAPER_OLLAMA_THINK-false}
+      SCRAPER_OLLAMA_NUM_CTX: ${SCRAPER_OLLAMA_NUM_CTX:-32768}
+      SCRAPER_LLM_INPUT_BYTES: ${SCRAPER_LLM_INPUT_BYTES:-16000}
+      SCRAPER_LLM_OUTPUT_TOKENS: ${SCRAPER_LLM_OUTPUT_TOKENS:-2048}
+      SCRAPER_TOOL_TIMEOUT_S: ${SCRAPER_TOOL_TIMEOUT_S:-180}
+      SCRAPER_REQUEST_TIMEOUT_S: ${SCRAPER_REQUEST_TIMEOUT_S:-30}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      BRAVE_API_KEY: ${BRAVE_API_KEY:-}
+      SCRAPER_SEARXNG_URL: ${SCRAPER_SEARXNG_URL:-}
+      SCRAPER_MAX_CONCURRENT_CRAWLS: ${SCRAPER_MAX_CONCURRENT_CRAWLS:-2}
+      SCRAPER_MAX_CRAWL_JOBS: ${SCRAPER_MAX_CRAWL_JOBS:-16}
+      SCRAPER_MAX_CRAWL_PAGES: ${SCRAPER_MAX_CRAWL_PAGES:-100}
+      SCRAPER_MAX_CRAWL_DEPTH: ${SCRAPER_MAX_CRAWL_DEPTH:-3}
+      SCRAPER_CRAWL_TIMEOUT_S: ${SCRAPER_CRAWL_TIMEOUT_S:-180}
+      SCRAPER_CRAWL_TTL_S: ${SCRAPER_CRAWL_TTL_S:-600}
+      SCRAPER_CRAWL_RESULT_BYTES: ${SCRAPER_CRAWL_RESULT_BYTES:-5000000}
+      SCRAPER_CRAWL_FRONTIER_LIMIT: ${SCRAPER_CRAWL_FRONTIER_LIMIT:-1000}
+      SCRAPER_MAX_BROWSER_SESSIONS: ${SCRAPER_MAX_BROWSER_SESSIONS:-2}
+      SCRAPER_BROWSER_SESSION_TTL_S: ${SCRAPER_BROWSER_SESSION_TTL_S:-300}
+      SCRAPER_BROWSER_SNAPSHOT_BYTES: ${SCRAPER_BROWSER_SNAPSHOT_BYTES:-64000}
+      SCRAPER_BROWSER_STEALTH: ${SCRAPER_BROWSER_STEALTH:-true}
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks: [isolated]
+    depends_on: [egress]
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    shm_size: 256m
+    mem_limit: 1536m
+    cpus: 2
+    pids_limit: 256
+    cap_drop: [ALL]
+    cap_add: [SYS_CHROOT]
+    security_opt:
+      - seccomp=./deploy/chromium-seccomp.json
+      - no-new-privileges:true
+  egress:
+    build: .
+    command: ["python", "-m", "web_scraper_mcp.egress"]
+    environment:
+      SCRAPER_EGRESS_BIND: 0.0.0.0
+    networks: [isolated, outbound]
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 64
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+networks:
+  isolated:
+    internal: true
+  outbound: {}

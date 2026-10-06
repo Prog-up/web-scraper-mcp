@@ -1,5 +1,6 @@
 """extract LLM plumbing (mocked Anthropic) + search backend selection. No network."""
 
+import httpx
 import pytest
 
 from web_scraper_mcp.tools import extract as ex
@@ -17,11 +18,13 @@ class _Block:
         self.type = type
         self.input = input
         self.text = text
+        self.name = "extract"
 
 
 class _Msg:
     def __init__(self, content):
         self.content = content
+        self.stop_reason = "tool_use" if any(b.type == "tool_use" for b in content) else "end_turn"
 
 
 class _Messages:
@@ -34,8 +37,14 @@ class _Messages:
 
 def _fake_anthropic(content):
     class _Client:
-        def __init__(self, api_key=None):
+        def __init__(self, api_key=None, **kwargs):
             self.messages = _Messages(content)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
 
     return _Client
 
@@ -44,6 +53,7 @@ def _fake_anthropic(content):
 class _FakeResponse:
     def __init__(self, json_data, status_code=200):
         self._json_data = json_data
+        self._json_data["done"] = True
         self.status_code = status_code
 
     def json(self):
@@ -105,7 +115,11 @@ async def test_llm_extract_ollama_schema(monkeypatch):
             }
         }
     )
-    monkeypatch.setattr("httpx.AsyncClient", lambda **kwargs: _FakeAsyncClient(fake_response))
+    client_factory = httpx.AsyncClient
+    transport = httpx.MockTransport(lambda r: httpx.Response(200, json=fake_response.json()))
+    monkeypatch.setattr(
+        "httpx.AsyncClient", lambda **kwargs: client_factory(transport=transport, **kwargs)
+    )
     out = await ex._llm_extract("page md", {"type": "object"}, None)
     assert out == {"data": {"title": "Ollama Book", "price": 10}}
 
@@ -120,7 +134,11 @@ async def test_llm_extract_ollama_freeform(monkeypatch):
             }
         }
     )
-    monkeypatch.setattr("httpx.AsyncClient", lambda **kwargs: _FakeAsyncClient(fake_response))
+    client_factory = httpx.AsyncClient
+    transport = httpx.MockTransport(lambda r: httpx.Response(200, json=fake_response.json()))
+    monkeypatch.setattr(
+        "httpx.AsyncClient", lambda **kwargs: client_factory(transport=transport, **kwargs)
+    )
     out = await ex._llm_extract("page md", None, "summarise")
     assert out == {"text": "extracted text answer"}
 

@@ -1,95 +1,77 @@
-# Plain free CLIs as jobs — works on any GitLab (incl. self-managed EPITA),
-# no Ultimate license required. Stages: quality gate -> security -> build ->
-# (manual) benchmark scorecard.
-stages: [lint, test, security, build, benchmark]
-
-variables:
-  IMAGE: $CI_REGISTRY_IMAGE
-  TAG: $CI_COMMIT_SHORT_SHA
-
-# --- reusable uv job (Python 3.13, frozen lockfile) ---------------------------
+# GitLab validates the same artifact. The canonical signed release is on GitHub/Docker Hub.
+stages: [lint, test, security, build, image-scan, benchmark]
 .uv:
-  image: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
-  variables:
-    UV_CACHE_DIR: "$CI_PROJECT_DIR/.uv-cache"
-  cache:
-    key:
-      files: [uv.lock]
-    paths: [.uv-cache]
+  image: python:3.12-slim-trixie@sha256:02108f5d322dd89f1c9e552442c25acb0543dfdbc455693a5599624f20d9155d
   before_script:
+    - pip install uv==0.12.21
     - uv sync --frozen
-
-# === quality gate =============================================================
 ruff:
   stage: lint
   extends: .uv
   script:
-    - uv run ruff check .
-    - uv run ruff format --check .
-
+    - uv run ruff check src tests benchmarks scripts
+    - uv run ruff format --check src tests benchmarks scripts
 mypy:
   stage: lint
   extends: .uv
-  script:
-    - uv run mypy src
-
+  script: [uv run mypy src]
 pytest:
   stage: test
   extends: .uv
-  script:
-    - uv run pytest -q
-
-# === security =================================================================
-bandit:          # Python SAST — blocking
+  script: [uv run pytest -q]
+bandit:
   stage: security
   extends: .uv
-  script:
-    - uv run bandit -r src -ll
-
-secret-detection:  # blocking — no secrets should ever land in the repo
+  script: [uv run bandit -r src -ll]
+secret-detection:
   stage: security
   image:
-    name: zricethezav/gitleaks:latest
-    entrypoint: [""]
-  script:
-    - gitleaks detect --source . --redact --no-banner -v
-
-dependency-scan:   # dep CVEs against the lockfile — report only (transitive CVEs
-  stage: security  # are often unfixable; don't block the pipeline on them)
-  image:
-    name: aquasec/trivy:latest
-    entrypoint: [""]
-  script:
-    - trivy fs --scanners vuln --severity HIGH,CRITICAL uv.lock
-  allow_failure: true
-
-# === build & push =============================================================
+    name: zricethezav/gitleaks:latest@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+    entrypoint: ['']
+  variables:
+    GIT_DEPTH: '0'
+  script: [gitleaks detect --source . --redact --no-banner]
+dependency-scan:
+  stage: security
+  extends: .uv
+  script: [python scripts/audit_dependencies.py]
 build:
   stage: build
-  image: docker:27
-  services: [docker:27-dind]
+  image: library/docker:27@sha256:aa3df78ecf320f5fafdce71c659f1629e96e9de0968305fe1de670e0ca9176ce
+  services:
+    - name: library/docker:27-dind@sha256:aa3df78ecf320f5fafdce71c659f1629e96e9de0968305fe1de670e0ca9176ce
+      alias: docker
+      command: [dockerd]
   variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-  rules:
-    - if: $CI_COMMIT_BRANCH
+    DOCKER_TLS_CERTDIR: /certs
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_VERIFY: '1'
+    DOCKER_CERT_PATH: /certs/client
   script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker build -t "$IMAGE:$TAG" -t "$IMAGE:latest" .
-    - docker push "$IMAGE:$TAG"
-    - docker push "$IMAGE:latest"
-    # Capture the immutable digest so downstream jobs sign/scan by digest.
-    - DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE:$TAG")
-    - echo "IMAGE_DIGEST=$DIGEST" >> build.env
+    - docker build -t web-scraper-mcp:validated .
+    - >-
+      for fixture in scripts/browser_regression.py scripts/browser_features.py; do
+      docker run --rm -i --init --network none --read-only
+      --tmpfs /tmp:size=256m --shm-size=256m --memory=1536m --cpus=2 --pids-limit=256
+      --cap-drop ALL --cap-add SYS_CHROOT --security-opt seccomp=deploy/chromium-seccomp.json
+      --security-opt no-new-privileges:true
+      web-scraper-mcp:validated python - < "$fixture" || exit $?; done
+    - docker save web-scraper-mcp:validated -o image.tar
   artifacts:
-    reports:
-      dotenv: build.env
-
-# === benchmark scorecard (manual: slow, downloads datasets) ===================
+    paths: [image.tar]
+    expire_in: 1 day
+image-scan:
+  stage: image-scan
+  image:
+    name: aquasec/trivy:latest@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+    entrypoint: ['']
+  needs: [build]
+  script:
+    - trivy image --input image.tar --exit-code 1 --severity HIGH,CRITICAL
 benchmark:
   stage: benchmark
   extends: .uv
   when: manual
-  script:
-    - uv run python benchmarks/run.py --output scorecard.md
+  script: [uv run python benchmarks/run.py --output scorecard.md]
   artifacts:
     paths: [scorecard.md, benchmarks/scorecard.json]

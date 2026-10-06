@@ -41,3 +41,13 @@ def test_extract_links_same_domain_filter():
     links = extract_links(FIXTURE, BASE, same_domain=True)
     assert "https://other.example/page" not in links
     assert "https://site.example/about" in links
+
+
+def test_link_output_is_bounded_even_with_long_base_url():
+    html = "<html><body>" + "".join(f'<a href="x{i}">link</a>' for i in range(2000))
+    html += "</body></html>"
+    short = extract_links(html, BASE)
+    assert len(short) == 1000
+    long = extract_links(html, "https://site.example/" + "a" * 7900 + "/page")
+    assert len(long) < 1000
+    assert sum(len(url.encode()) for url in long) <= 256_000

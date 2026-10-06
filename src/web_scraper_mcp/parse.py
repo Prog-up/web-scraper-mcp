@@ -1,11 +1,29 @@
-"""HTML → markdown and link extraction. Shared by scrape / crawl / map."""
+"""Shared HTML → markdown, title and link extraction."""
 
 from __future__ import annotations
 
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
 
 import trafilatura
 from selectolax.parser import HTMLParser
+
+from .security import parse_url
+
+
+def canonical_url(url: str) -> str:
+    """Normalize authority/default ports and discard fragments for traversal dedup."""
+    host, port = parse_url(url)
+    parsed = urlsplit(url)
+    host = host.lower().rstrip(".")
+    authority = f"[{host}]" if ":" in host else host
+    if port != (443 if parsed.scheme == "https" else 80):
+        authority += f":{port}"
+    return urlunsplit((parsed.scheme, authority, parsed.path or "/", parsed.query, ""))
+
+
+def same_host(left: str, right: str) -> bool:
+    """Compare normalized authority, treating each scheme's default port as implicit."""
+    return urlsplit(canonical_url(left)).netloc == urlsplit(canonical_url(right)).netloc
 
 
 def _fallback_markdown(html: str) -> str:
@@ -34,11 +52,13 @@ def title_of(html: str) -> str | None:
     return node.text(strip=True) if node else None
 
 
-def extract_links(html: str, base_url: str, *, same_domain: bool = False) -> list[str]:
-    """Absolute http(s) links on the page, de-duplicated, order preserved."""
-    base_host = urlparse(base_url).netloc
+def extract_links(
+    html: str, base_url: str, *, same_domain: bool = False, limit: int = 1000
+) -> list[str]:
+    """Absolute links, de-duplicated; at most 2,000 links and 256 KB total."""
     seen: set[str] = set()
     out: list[str] = []
+    total_bytes = 0
     for a in HTMLParser(html).css("a[href]"):
         href = a.attributes.get("href")
         if not href:
@@ -47,10 +67,19 @@ def extract_links(html: str, base_url: str, *, same_domain: bool = False) -> lis
         parsed = urlparse(absolute)
         if parsed.scheme not in ("http", "https"):
             continue
-        if same_domain and parsed.netloc != base_host:
+        try:
+            clean = canonical_url(absolute)
+            if same_domain and not same_host(clean, base_url):
+                continue
+        except ValueError:
             continue
-        clean = absolute.split("#", 1)[0]
+        size = len(clean.encode())
+        if size > 8192:
+            continue
         if clean not in seen:
+            if len(out) >= min(limit, 2000) or total_bytes + size > 256_000:
+                break
             seen.add(clean)
             out.append(clean)
+            total_bytes += size
     return out

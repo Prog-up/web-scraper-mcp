@@ -9,3 +9,5 @@ benchmarks/.cache/
 benchmarks/scorecard.json
 *.egg-info/
 dist/
+
+*.log
