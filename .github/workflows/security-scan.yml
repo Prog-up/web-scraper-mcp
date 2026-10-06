@@ -12,6 +12,7 @@ jobs:
       - run: docker build -t web-scraper-mcp:test .
       - name: Test shipped sandbox and denied destinations
         run: |
+          set -euo pipefail
           for fixture in scripts/browser_regression.py scripts/browser_features.py; do
             docker run --rm -i --init --network none --read-only \
               --tmpfs /tmp:size=256m --shm-size=256m --memory=1536m --cpus=2 --pids-limit=256 \
@@ -22,7 +23,20 @@ jobs:
           done
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          version: v0.75.0
           image-ref: web-scraper-mcp:test
-          exit-code: '1'
+          scanners: vuln
+          format: json
+          output: trivy-full.json
+          exit-code: '0'
           ignore-unfixed: false
           severity: HIGH,CRITICAL
+      - name: Retain complete vulnerability report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: trivy-pr-${{ github.event.pull_request.number }}
+          path: trivy-full.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Enforce the approved release inventory and expiry
+        run: python scripts/check_image_release.py trivy-full.json
