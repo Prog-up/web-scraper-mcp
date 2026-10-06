@@ -1,7 +1,7 @@
 # Remediation and feature validation — updated 6 October 2026
 
 Work is on `codex/security-remediation`, based on `87373be62cdf1dd92d1670fa023b3cd608888fd8`.
-Changes are uncommitted. The original [review](2026-10-05-review.md) records the
+The reviewed changes are committed as the release 1.1.0 candidate. The original [review](2026-10-05-review.md) records the
 baseline; the [plan](2026-10-05-plan.md) and this document record remediation.
 
 All **ten advertised MCP tools are implemented and regression-tested**.
@@ -110,7 +110,8 @@ Unused X server, Vulkan and printing packages were removed.
 
 The [artifact evidence](2026-10-05-remediation-evidence.json) records exact source,
 lockfile and image identities and every remaining HIGH/CRITICAL finding. Local
-and image source/lockfile hashes match. No blanket waiver, `ignore-unfixed`, or
+and image source/lockfile hashes matched at the recorded pre-release validation;
+the subsequent package-version bump is tracked in [the release candidate](../releases/1.1.0.md). No blanket waiver, `ignore-unfixed`, or
 nonblocking release scan was added. Publication waits for patched packages or
 narrowly reviewed, owned, expiring applicability decisions. Python, Node and uv
 inventories had no HIGH/CRITICAL findings in the scan; this does not prove every
@@ -141,4 +142,5 @@ automatic approval review initially rejected the persistent policy change.
 [Profile provenance](../../deploy/README.md) records its upstream commit and
 existing namespace allowance. User-owned untracked experiments/text files and
 the original Trivy report were preserved. Local `server.log` remains on disk.
-No implementation commit or pull request has been created.
+The implementation and candidate metadata are committed on the review branch;
+publication is awaiting explicit approval of the documented release exception.
