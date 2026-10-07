@@ -15,8 +15,8 @@ They also expose kernel namespace operations to container processes. The profile
 still defaults to deny (`SCMP_ACT_ERRNO`); it is not an unconfined policy.
 Docker's modern compatibility rules include `openat2` and a `clone3` ENOSYS
 fallback. The old Playwright profile failed before application startup under this
-host's current runc/libpathrs runtime. The replacement was explicitly approved
-by the user on 5 October 2026 after automatic review initially rejected it.
+tested runc/libpathrs runtime. This profile retains a default-deny policy while
+allowing Chromium's namespace sandbox to initialize.
 
 The app runs as a non-root user, with all Docker capabilities dropped except
 `SYS_CHROOT` (a standard Docker capability needed for Chromium sandbox setup),

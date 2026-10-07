@@ -70,7 +70,7 @@ class Settings(BaseSettings):
         return None if value == "" else value
 
     # --- politeness / anti-bot (self-hosted) ---
-    user_agent: str = "web-scraper-mcp/0.1 (+https://gitlab.cri.epita.fr/enzo.juhel/web-scraper)"
+    user_agent: str = "web-scraper-mcp (+https://github.com/Prog-up/web-scraper-mcp)"
     respect_robots: bool = True
 
     # SSRF: keep False in any networked deployment. Only flip for local testing.
