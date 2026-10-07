@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-07",
+  "method": "Date.now wall time around actual web__run calls, response_length short; different output lengths from MCP; 2 calls per case",
+  "rows": [
+    {
+      "tool": "web.open",
+      "url": "https://www.python.org/doc/",
+      "seconds": 1.938,
+      "sample": 1
+    },
+    {
+      "tool": "web.open",
+      "url": "https://docs.python.org/3/library/asyncio-task.html",
+      "seconds": 1.894,
+      "sample": 1
+    },
+    {
+      "tool": "web.open",
+      "url": "https://playwright.dev/python/docs/locators",
+      "seconds": 1.724,
+      "sample": 1
+    },
+    {
+      "tool": "web.open",
+      "url": "https://www.python.org/doc/",
+      "seconds": 2.24,
+      "sample": 2
+    },
+    {
+      "tool": "web.open",
+      "url": "https://docs.python.org/3/library/asyncio-task.html",
+      "seconds": 2.382,
+      "sample": 2
+    },
+    {
+      "tool": "web.open",
+      "url": "https://playwright.dev/python/docs/locators",
+      "seconds": 1.757,
+      "sample": 2
+    },
+    {
+      "tool": "web.search",
+      "query": "Python asyncio TaskGroup documentation",
+      "seconds": 1.842,
+      "sample": 1
+    },
+    {
+      "tool": "web.search",
+      "query": "Python asyncio TaskGroup documentation",
+      "seconds": 1.853,
+      "sample": 2
+    }
+  ],
+  "browser_check": {
+    "passed": true,
+    "steps": [
+      "Open Playwright locators documentation in a temporary in-app browser tab",
+      "Read accessibility state",
+      "Click Mock APIs by exact semantic link locator",
+      "Verify /python/docs/mock and updated accessibility state",
+      "Close temporary tab"
+    ],
+    "latency_comparison": false
+  }
+}

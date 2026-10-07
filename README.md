@@ -126,9 +126,12 @@ support the chosen context. Prompt framing cannot guarantee immunity to prompt
 injection; validate important extracted facts against the original source.
 
 Schemas use JSON Schema 2020-12, limited to 16 KB, 512 nodes, and depth 12.
+Ollama extraction sends the schema through its structured-output `format` field
+and validates the returned JSON locally; Anthropic uses forced tool output.
 Remote/root references, `$id`, `pattern`, and `patternProperties` are unsupported.
 Output validation is limited to 64 KB, 1,024 nodes, and depth 16. Citation checking
-verifies source indices; it does not prove that a cited source supports a claim.
+rejects missing/out-of-range indices and literal `[n]` placeholders; it does not
+prove that a cited source supports a claim.
 
 ## Configuration and security boundaries
 
@@ -148,6 +151,7 @@ settings and accepted ranges.
 | `SCRAPER_MAX_CONCURRENT_PAGES` | `4` | Browser page limit. |
 | `SCRAPER_MAX_CONCURRENT_LLM` | `2` | Model request admission limit. |
 | `SCRAPER_MAX_CONCURRENT_CRAWLS` | `2` | Background job admission limit. |
+| `SCRAPER_CRAWL_CONCURRENCY` | `3` | Fetch workers per crawl (1–8), bounded by the server fetch limit. |
 | `SCRAPER_MAX_CRAWL_JOBS` | `16` | Stored jobs; expired or oldest completed jobs can be removed. |
 | `SCRAPER_CRAWL_TTL_S` | `600` | Retain completed/cancelled jobs for this long. |
 | `SCRAPER_MAX_BROWSER_SESSIONS` | `2` | Persistent sessions reserve shared browser page capacity. |
@@ -166,7 +170,10 @@ Scrape link output is capped at 1,000 links and 256 KB total; `map` accepts up t
 2,000 links with the same byte cap. Crawl defaults are 20 requested pages and
 depth 2, clamped to server limits of 100 pages and depth 3. Frontiers are capped
 at 1,000 URLs; accumulated results/failures at 5 MB; the job deadline is 180
-seconds. Same-domain crawling compares normalized host and effective authority
+seconds. Crawls fetch bounded batches in discovery order, share worker capacity
+across jobs, and retain completed batches when cancelled. Foreground tools still
+use the server's admission limits. Same-domain crawling compares normalized host
+and effective authority
 (default ports omitted), and rejects redirects to another host or non-default
 port. Jobs and sessions live in memory, share the server bearer token, and close
 on shutdown. Browser sessions have independent cookie contexts; cookies are

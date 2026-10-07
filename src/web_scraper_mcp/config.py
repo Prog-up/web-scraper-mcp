@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     max_concurrent_llm: int = Field(default=2, ge=1, le=8)
     max_crawl_pages: int = Field(default=100, ge=1, le=1000)
     max_crawl_depth: int = Field(default=3, ge=0, le=10)
+    crawl_concurrency: int = Field(default=3, ge=1, le=8)
     max_crawl_jobs: int = Field(default=16, ge=1, le=32)
     max_concurrent_crawls: int = Field(default=2, ge=1, le=4)
     crawl_timeout_s: float = Field(default=180, gt=0, le=600)

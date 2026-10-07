@@ -26,13 +26,29 @@ def same_host(left: str, right: str) -> bool:
     return urlsplit(canonical_url(left)).netloc == urlsplit(canonical_url(right)).netloc
 
 
-def _fallback_markdown(html: str) -> str:
-    """Fallback layout parser when main-content extractor fails."""
-
+def _clean_short_page(html: str) -> str:
+    """Remove page chrome without removing headers inside articles."""
     parser = HTMLParser(html)
-    for tag in ("script", "style", "head", "iframe", "svg"):
+    for tag in (
+        "script",
+        "style",
+        "head",
+        "iframe",
+        "svg",
+        "nav",
+        '[role="navigation"]',
+        "body > header",
+        "body > footer",
+        "body > aside",
+    ):
         for node in parser.css(tag):
             node.decompose()
+    return parser.html or ""
+
+
+def _fallback_markdown(html: str) -> str:
+    """Fallback layout parser when main-content extraction fails."""
+    parser = HTMLParser(_clean_short_page(html))
     body = parser.body
     return body.text(separator="\n", strip=True) if body else ""
 
@@ -41,7 +57,14 @@ def to_markdown(html: str, url: str) -> str:
     """Clean main-content markdown (nav/ads/boilerplate stripped)."""
     md = trafilatura.extract(html, url=url, output_format="markdown", include_links=True) or ""
     if len(md.strip()) < 500:
-        fallback = _fallback_markdown(html)
+        # Short listings often trigger a full-body fallback in the extractor.
+        # Remove navigation/ads first so fallback cannot amplify that boilerplate.
+        cleaned = _clean_short_page(html)
+        md = (
+            trafilatura.extract(cleaned, url=url, output_format="markdown", include_links=True)
+            or ""
+        )
+        fallback = _fallback_markdown(cleaned)
         if len(fallback) > len(md) * 2:
             return fallback
     return md

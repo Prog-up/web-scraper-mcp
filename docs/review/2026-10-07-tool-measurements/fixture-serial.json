@@ -1,0 +1,275 @@
+{
+  "generated_at": "2026-10-07T11:07:24.206989+00:00",
+  "mode": "fixture",
+  "samples": 5,
+  "python": "3.13.14",
+  "models": {
+    "extract": "agent-fast-132K:latest",
+    "research": "agent-fast-132K:latest"
+  },
+  "settings": {
+    "ollama_num_ctx": 131072,
+    "llm_input_bytes": 16000,
+    "llm_output_tokens": 2048,
+    "crawl_concurrency": 1,
+    "max_concurrent_fetches": 8,
+    "respect_robots": false,
+    "per_domain_delay_s": 0
+  },
+  "source_sha256": "51249faefa219b1f0188b0779224658f6f792f8fd9e3f8b0af898d7bed18f923",
+  "fixture_delay_s": 0.05,
+  "fixture_requests": 80,
+  "peak_fixture_fetches": 1,
+  "process_peak_rss_kib": 119024,
+  "registered_tools": [
+    "browser_act",
+    "browser_close",
+    "browser_navigate",
+    "check_crawl_status",
+    "crawl",
+    "deep_research",
+    "extract",
+    "map",
+    "scrape",
+    "search"
+  ],
+  "rows": [
+    {
+      "tool": "scrape",
+      "case": "https://fixture.example/",
+      "seconds": 0.078074,
+      "ok": true,
+      "output_bytes": 1361,
+      "status": 200,
+      "via": "static"
+    },
+    {
+      "tool": "scrape",
+      "case": "https://fixture.example/",
+      "seconds": 0.080472,
+      "ok": true,
+      "output_bytes": 1361,
+      "status": 200,
+      "via": "static"
+    },
+    {
+      "tool": "scrape",
+      "case": "https://fixture.example/",
+      "seconds": 0.081267,
+      "ok": true,
+      "output_bytes": 1361,
+      "status": 200,
+      "via": "static"
+    },
+    {
+      "tool": "scrape",
+      "case": "https://fixture.example/",
+      "seconds": 0.08078,
+      "ok": true,
+      "output_bytes": 1361,
+      "status": 200,
+      "via": "static"
+    },
+    {
+      "tool": "scrape",
+      "case": "https://fixture.example/",
+      "seconds": 0.082263,
+      "ok": true,
+      "output_bytes": 1361,
+      "status": 200,
+      "via": "static"
+    },
+    {
+      "tool": "map",
+      "case": "map",
+      "seconds": 0.07756,
+      "ok": true,
+      "output_bytes": 400,
+      "count": 10
+    },
+    {
+      "tool": "search",
+      "case": "search",
+      "seconds": 0.006503,
+      "ok": true,
+      "output_bytes": 124,
+      "count": 1,
+      "backend": "searxng"
+    },
+    {
+      "tool": "crawl",
+      "case": "crawl",
+      "seconds": 0.020307,
+      "ok": true,
+      "output_bytes": 67,
+      "status": "running"
+    },
+    {
+      "tool": "check_crawl_status",
+      "case": "completed crawl",
+      "seconds": 0.00512,
+      "ok": true,
+      "output_bytes": 12119,
+      "pages_crawled": 13,
+      "status": "completed"
+    },
+    {
+      "tool": "crawl",
+      "case": "completion",
+      "seconds": 1.003845,
+      "ok": true,
+      "pages_crawled": 13
+    },
+    {
+      "tool": "crawl",
+      "case": "crawl",
+      "seconds": 0.020089,
+      "ok": true,
+      "output_bytes": 67,
+      "status": "running"
+    },
+    {
+      "tool": "check_crawl_status",
+      "case": "completed crawl",
+      "seconds": 0.004507,
+      "ok": true,
+      "output_bytes": 12119,
+      "pages_crawled": 13,
+      "status": "completed"
+    },
+    {
+      "tool": "crawl",
+      "case": "completion",
+      "seconds": 0.984637,
+      "ok": true,
+      "pages_crawled": 13
+    },
+    {
+      "tool": "crawl",
+      "case": "crawl",
+      "seconds": 0.015544,
+      "ok": true,
+      "output_bytes": 67,
+      "status": "running"
+    },
+    {
+      "tool": "check_crawl_status",
+      "case": "completed crawl",
+      "seconds": 0.00599,
+      "ok": true,
+      "output_bytes": 12119,
+      "pages_crawled": 13,
+      "status": "completed"
+    },
+    {
+      "tool": "crawl",
+      "case": "completion",
+      "seconds": 0.963041,
+      "ok": true,
+      "pages_crawled": 13
+    },
+    {
+      "tool": "crawl",
+      "case": "crawl",
+      "seconds": 0.022757,
+      "ok": true,
+      "output_bytes": 67,
+      "status": "running"
+    },
+    {
+      "tool": "check_crawl_status",
+      "case": "completed crawl",
+      "seconds": 0.006133,
+      "ok": true,
+      "output_bytes": 12119,
+      "pages_crawled": 13,
+      "status": "completed"
+    },
+    {
+      "tool": "crawl",
+      "case": "completion",
+      "seconds": 1.032864,
+      "ok": true,
+      "pages_crawled": 13
+    },
+    {
+      "tool": "crawl",
+      "case": "crawl",
+      "seconds": 0.023896,
+      "ok": true,
+      "output_bytes": 67,
+      "status": "running"
+    },
+    {
+      "tool": "check_crawl_status",
+      "case": "completed crawl",
+      "seconds": 0.005512,
+      "ok": true,
+      "output_bytes": 12119,
+      "pages_crawled": 13,
+      "status": "completed"
+    },
+    {
+      "tool": "crawl",
+      "case": "completion",
+      "seconds": 1.034002,
+      "ok": true,
+      "pages_crawled": 13
+    },
+    {
+      "tool": "crawl",
+      "case": "cancel setup",
+      "seconds": 0.021821,
+      "ok": true,
+      "output_bytes": 67,
+      "status": "running"
+    },
+    {
+      "tool": "check_crawl_status",
+      "case": "cancel",
+      "seconds": 0.002193,
+      "ok": true,
+      "output_bytes": 153,
+      "pages_crawled": 0,
+      "status": "cancelled"
+    },
+    {
+      "tool": "extract",
+      "case": "structured",
+      "seconds": 0.085151,
+      "ok": true,
+      "output_bytes": 67
+    },
+    {
+      "tool": "extract",
+      "case": "text",
+      "seconds": 0.078784,
+      "ok": true,
+      "output_bytes": 82
+    },
+    {
+      "tool": "deep_research",
+      "case": "two-source research",
+      "seconds": 0.077581,
+      "ok": true,
+      "output_bytes": 217,
+      "backend": "searxng",
+      "sources_read": 1,
+      "source_failures": 0
+    }
+  ],
+  "median_seconds": {
+    "scrape / https://fixture.example/": 0.08078,
+    "map / map": 0.07756,
+    "search / search": 0.006503,
+    "crawl / crawl": 0.020307,
+    "check_crawl_status / completed crawl": 0.005512,
+    "crawl / completion": 1.003845,
+    "crawl / cancel setup": 0.021821,
+    "check_crawl_status / cancel": 0.002193,
+    "extract / structured": 0.085151,
+    "extract / text": 0.078784,
+    "deep_research / two-source research": 0.077581
+  },
+  "limitations": "Small diagnostic sample; fixture mode mocks network/providers. Peak RSS includes the harness. Built-in service hardware/cache state is unknown."
+}

@@ -91,10 +91,8 @@ def upstream(monkeypatch):
         if request.url.path == "/api/chat":
             payload = json.loads(request.content)
             message = {"role": "assistant", "content": "Fixture summary [1]"}
-            if payload.get("tools"):
-                message["tool_calls"] = [
-                    {"function": {"name": "extract", "arguments": {"title": "Fixture article"}}}
-                ]
+            if payload.get("format"):
+                message["content"] = json.dumps({"title": "Fixture article"})
             return httpx.Response(
                 200, json={"done": True, "done_reason": "stop", "message": message}
             )
