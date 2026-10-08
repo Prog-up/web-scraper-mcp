@@ -1,6 +1,6 @@
 [project]
 name = "web-scraper-mcp"
-version = "1.1.0"
+version = "1.1.1"
 description = "Self-hosted MCP tools for bounded web scraping, search and extraction"
 readme = "README.md"
 license = { file = "LICENSE" }

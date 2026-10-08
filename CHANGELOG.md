@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## [1.1.1](https://github.com/Prog-up/web-scraper-mcp/releases/tag/1.1.1) — 2026-10-08
+
+- Correct the internal package version to match release metadata.
 - Fetch crawl pages in bounded parallel batches while preserving discovery order,
   cancellation cleanup, result limits and shared worker capacity.
 - Improve short-page extraction by removing navigation and page chrome while
