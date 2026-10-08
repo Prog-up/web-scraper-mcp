@@ -15,8 +15,9 @@ and locked dependencies. Stable version tags matching the package version on the
 trigger a release. Release builds scan the exact local image before any registry
 push. Docker Hub tags are immutable, so releases publish a new version and full
 commit tag; they do not overwrite the historical `latest` tag. HIGH/CRITICAL findings, including unfixed OS findings, block
-publication, except for the explicitly approved, exact package/CVE inventory for
-[release 1.1.0](releases/1.1.0.md), expiring 13 October 2026. Fixable and
+publication, except for the explicitly approved, exact package/CVE inventories for
+[release 1.1.0](releases/1.1.0.md) and [release 1.1.1](releases/1.1.1.md),
+both expiring 13 October 2026. Fixable and
 additional findings remain blocked; full reports are retained. Actions and base
 images are pinned. GitLab validates source and images; it does not publish a competing `latest` tag.
 
@@ -42,4 +43,5 @@ vulnerability gate, and signature/SBOM verification must all succeed.
 
 Create a new version tag only after updating `pyproject.toml`, refreshing
 `uv.lock`, recording changes in `CHANGELOG.md`, and merging to the default branch.
-The 1.1.0 exception does not apply to a different release.
+Each exception applies only to its named release and exact inventory; no
+exception automatically carries forward to a later version.
