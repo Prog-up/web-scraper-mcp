@@ -119,7 +119,8 @@ CI checks Python 3.11–3.13, lint, formatting, typing, tests, secrets and locke
 dependencies. Container releases also test the exact sandboxed browser artifact,
 scan vulnerabilities, and sign the published digest with an SPDX SBOM.
 See [release procedures](docs/releases.md), [release history](CHANGELOG.md) and
-the [known 1.1.0 security exception](docs/releases/1.1.0.md).
+the known security exceptions for [1.1.0](docs/releases/1.1.0.md) and
+[1.1.1](docs/releases/1.1.1.md).
 
 Report bugs through [GitHub issues](https://github.com/Prog-up/web-scraper-mcp/issues).
 Support is community-based, with no service-level agreement.

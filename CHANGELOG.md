@@ -4,6 +4,9 @@
 
 ## [1.1.1](https://github.com/Prog-up/web-scraper-mcp/releases/tag/1.1.1) — 2026-10-08
 
+- Retain the same 59 HIGH and one CRITICAL unfixed Debian findings under an
+  explicitly approved 1.1.1 inventory, expiring 13 October 2026 at 23:59:59 UTC.
+  Additional or fixable findings remain blocked; this is not a clean image scan.
 - Correct the internal package version to match release metadata.
 - Fetch crawl pages in bounded parallel batches while preserving discovery order,
   cancellation cleanup, result limits and shared worker capacity.

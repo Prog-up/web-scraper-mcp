@@ -38,11 +38,14 @@ CI scans source, secrets and locked dependencies. The release pipeline tests the
 exact container, scans HIGH/CRITICAL findings including unfixed vulnerabilities,
 then signs the published image digest and attaches an SPDX SBOM.
 
-Release **1.1.0 contains a time-limited exception for known unfixed Debian
-vulnerabilities**, including one CRITICAL finding. See the
-[release disclosure](docs/releases/1.1.0.md) and
-[exact inventory](deploy/release-exceptions/1.1.0.json). The exception expires on
-13 October 2026 and does not apply to later versions. Cleanup and successful
-functional tests do not establish that an image is vulnerability-free.
+Releases **1.1.0 and 1.1.1 contain separate time-limited exceptions for known
+unfixed Debian vulnerabilities**, including one CRITICAL finding. See the
+[1.1.0 disclosure](docs/releases/1.1.0.md) and
+[inventory](deploy/release-exceptions/1.1.0.json), and the
+[1.1.1 disclosure](docs/releases/1.1.1.md) and
+[inventory](deploy/release-exceptions/1.1.1.json). Both expire on
+13 October 2026 at 23:59:59 UTC. Each applies only to its named release and
+exact inventory; fixable or additional findings remain blocked. Cleanup and
+successful functional tests do not establish that an image is vulnerability-free.
 
 See [release verification](docs/releases.md) for the signature and SBOM commands.
