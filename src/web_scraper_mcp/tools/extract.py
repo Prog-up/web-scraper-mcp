@@ -40,14 +40,17 @@ async def _llm_extract(markdown: str, schema: dict | None, prompt: str | None) -
     model = settings.extract_model
     provider = provider_for(model, settings.extract_provider)
     instruction = prompt or "Extract the requested structured data from the page content."
-    overhead = len(json.dumps(schema or {}).encode()) + len(instruction.encode())
+    schema_bytes = len(json.dumps(schema or {}).encode())
+    # Ollama uses the schema both in its decoder and in the task instructions.
+    structured_ollama = provider == "ollama" and schema is not None
+    overhead = schema_bytes * (2 if structured_ollama else 1) + len(instruction.encode())
     remaining = (input_budget(settings) - overhead - 512) // 2
     if remaining < 512:
         return {"error": "prompt and schema exceed model input budget"}
-    content = json.dumps(
-        {"task": instruction, "untrusted_page": truncate_bytes(markdown, remaining)},
-        ensure_ascii=False,
-    )
+    task: dict = {"task": instruction, "untrusted_page": truncate_bytes(markdown, remaining)}
+    if structured_ollama:
+        task["output_schema"] = schema
+    content = json.dumps(task, ensure_ascii=False)
     if len(content.encode()) + len(json.dumps(schema or {}).encode()) > input_budget(settings):
         return {"error": "encoded model input exceeds budget"}
     async with model_slots(settings).slot(), asyncio.timeout(settings.tool_timeout_s):
@@ -95,16 +98,8 @@ async def _llm_extract(markdown: str, schema: dict | None, prompt: str | None) -
             },
         }
         if schema is not None:
-            payload["tools"] = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "extract",
-                        "description": instruction,
-                        "parameters": schema,
-                    },
-                }
-            ]
+            payload["format"] = schema
+            payload["options"]["temperature"] = 0
         message = await ollama_chat(settings, payload)
         if schema is None:
             return {"text": message.get("content", "")}

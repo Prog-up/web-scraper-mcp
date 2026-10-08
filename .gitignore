@@ -5,9 +5,17 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .env
+.env.*
+!.env.example
+/.local/
 benchmarks/.cache/
 benchmarks/scorecard.json
 *.egg-info/
 dist/
+build/
+/scorecard.md
+/trivy*.json
+/sbom*.json
+/image.tar
 
 *.log

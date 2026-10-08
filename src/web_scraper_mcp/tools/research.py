@@ -60,8 +60,13 @@ async def _synthesize(query: str, docs: list[dict]) -> str:
                 high = middle - 1
         source["untrusted_text"] = text[:low]
     content = json.dumps(payload, ensure_ascii=False)
+    allowed_citations = ", ".join(f"[{i + 1}]" for i in range(len(docs)))
     system = (
-        UNTRUSTED_SYSTEM + " Synthesize a concise report and cite only provided sources as [n]."
+        UNTRUSTED_SYSTEM
+        + " Write a concise report of at most four paragraphs. Cite each factual paragraph "
+        + f"using actual source numbers. The only allowed citations are: {allowed_citations}. "
+        + "Never write literal placeholders such as [n]. If sources do not support an answer, "
+        + "explain that limitation with a citation to the source you inspected."
     )
     async with model_slots(settings).slot(), asyncio.timeout(settings.tool_timeout_s):
         if provider_for(settings.research_model, settings.research_provider) == "anthropic":
@@ -97,12 +102,18 @@ async def _synthesize(query: str, docs: list[dict]) -> str:
                     "options": {
                         "num_ctx": settings.ollama_num_ctx,
                         "num_predict": settings.llm_output_tokens,
+                        "temperature": 0,
                     },
                 },
             )
             report = message.get("content", "")
     citations = [int(n) for n in re.findall(r"\[(\d+)\]", report)]
-    if not report.strip() or not citations or any(n < 1 or n > len(docs) for n in citations):
+    if (
+        not report.strip()
+        or not citations
+        or re.search(r"\[n\]", report, flags=re.IGNORECASE)
+        or any(n < 1 or n > len(docs) for n in citations)
+    ):
         raise ValueError("research report has missing or invalid citations")
     return report
 

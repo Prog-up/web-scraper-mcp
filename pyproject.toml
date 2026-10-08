@@ -3,6 +3,8 @@ name = "web-scraper-mcp"
 version = "1.1.0"
 description = "Self-hosted MCP tools for bounded web scraping, search and extraction"
 readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["mcp", "web-scraping", "ollama", "playwright"]
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "fastmcp>=3.4.2,<4",
@@ -28,6 +30,12 @@ dependencies = [
 [project.scripts]
 web-scraper-mcp = "web_scraper_mcp.server:main"
 
+[project.urls]
+Homepage = "https://github.com/Prog-up/web-scraper-mcp"
+Repository = "https://github.com/Prog-up/web-scraper-mcp"
+Issues = "https://github.com/Prog-up/web-scraper-mcp/issues"
+Changelog = "https://github.com/Prog-up/web-scraper-mcp/blob/main/CHANGELOG.md"
+
 [dependency-groups]
 dev = [
     "ruff>=0.6",
@@ -45,6 +53,34 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/web_scraper_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/scripts",
+    "/benchmarks/*.py",
+    "/benchmarks/README.md",
+    "/docs",
+    "/deploy",
+    "/.github",
+    "/.gitignore",
+    "/.dockerignore",
+    "/.env.example",
+    "/.python-version",
+    "/.pre-commit-config.yaml",
+    "/.gitlab-ci.yml",
+    "/Dockerfile",
+    "/compose.yaml",
+    "/start.sh",
+    "/README.md",
+    "/CONTRIBUTING.md",
+    "/SECURITY.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+    "/pyproject.toml",
+    "/uv.lock",
+]
 
 [tool.ruff]
 line-length = 100

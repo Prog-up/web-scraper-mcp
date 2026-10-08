@@ -1,6 +1,7 @@
 """Real HTTP and stdio MCP roundtrips against a local source/search/model fixture."""
 
 import asyncio
+import json
 import socket
 import sys
 from contextlib import asynccontextmanager
@@ -72,15 +73,8 @@ async def fixture_server():
         if request.url.path == "/api/chat":
             payload = await request.json()
             message = {"role": "assistant", "content": "Transport summary [1]"}
-            if payload.get("tools"):
-                message["tool_calls"] = [
-                    {
-                        "function": {
-                            "name": "extract",
-                            "arguments": {"title": "Transport fixture"},
-                        }
-                    }
-                ]
+            if payload.get("format"):
+                message["content"] = json.dumps({"title": "Transport fixture"})
             return JSONResponse({"done": True, "done_reason": "stop", "message": message})
         if request.url.path in ("/", "/next"):
             return HTMLResponse(HTML)

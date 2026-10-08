@@ -3,7 +3,7 @@
   "owner": "Prog-up",
   "expires_at": "2026-10-13T23:59:59Z",
   "reason": "User explicitly approved publication of release 1.1.0 with only these 59 HIGH and one CRITICAL unfixed Debian package findings on 2026-10-06. Fixable or additional findings remain blocked.",
-  "evidence": "docs/review/2026-10-05-remediation-evidence.json",
+  "evidence": "docs/releases/1.1.0-evidence.json",
   "findings": [
     {
       "VulnerabilityID": "CVE-2026-76642",

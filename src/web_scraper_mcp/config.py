@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     max_concurrent_llm: int = Field(default=2, ge=1, le=8)
     max_crawl_pages: int = Field(default=100, ge=1, le=1000)
     max_crawl_depth: int = Field(default=3, ge=0, le=10)
+    crawl_concurrency: int = Field(default=3, ge=1, le=8)
     max_crawl_jobs: int = Field(default=16, ge=1, le=32)
     max_concurrent_crawls: int = Field(default=2, ge=1, le=4)
     crawl_timeout_s: float = Field(default=180, gt=0, le=600)
@@ -69,7 +70,7 @@ class Settings(BaseSettings):
         return None if value == "" else value
 
     # --- politeness / anti-bot (self-hosted) ---
-    user_agent: str = "web-scraper-mcp/0.1 (+https://gitlab.cri.epita.fr/enzo.juhel/web-scraper)"
+    user_agent: str = "web-scraper-mcp (+https://github.com/Prog-up/web-scraper-mcp)"
     respect_robots: bool = True
 
     # SSRF: keep False in any networked deployment. Only flip for local testing.

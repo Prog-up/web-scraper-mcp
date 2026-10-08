@@ -1,20 +1,29 @@
 {
-  "branch": "codex/security-remediation",
+  "scope": "Historical pre-release validation for 1.1.0; not a current scan or an extension of the approved exception.",
+  "created_at": "2026-10-06T08:44:23.078928733Z",
   "base_revision": "87373be62cdf1dd92d1670fa023b3cd608888fd8",
   "source_sha256": "c8b00a02a69b69388ac48419db18252bf8b0d16468b8838a85c1b59a2450b47e",
-  "created_at": "2026-10-06T08:44:23.078928733Z",
+  "source_hash_algorithm": "SHA-256 of sorted src/*.py paths (recursive), NUL, and file bytes",
   "image_id": "sha256:8c2c0a0fbc53123f8c4219562d3e703a7a24553531bc0a4796a1eca609eca668",
   "trivy_version": "0.75.0",
   "scanner_image": "aquasec/trivy@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa",
-  "python_host": "3.13.14",
   "python_container": "3.12.15",
   "playwright": "1.63.0",
   "chromium": "153.0.8010.12",
   "chromium_build": "1243",
-  "pytest_passed": 136,
+  "pytest_matrix": {
+    "3.11.16": 136,
+    "3.12.15": 136,
+    "3.13.14": 136
+  },
+  "tool_count": 10,
+  "uv_lock_sha256": "2c466fd1feb9b41f6f01ad7160fc4a22d75d478f666db59d6d53f2ae6f1bf11a",
+  "pyjwt": "2.15.1",
+  "anyio": "4.15.1",
+  "perl_base": "5.40.1-6+deb13u1",
+  "debian": "13.7",
   "osv_registry_packages": 130,
   "osv_affected_packages": 0,
-  "gitleaks_history_commits": 29,
   "gitleaks_findings": 0,
   "image_vulnerability_counts": {
     "HIGH": 59,
@@ -562,228 +571,5 @@
       "Status": "affected",
       "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-78410"
     }
-  ],
-  "browser_fixture": {
-    "sandbox_enabled": true,
-    "delayed_dom": true,
-    "broker_final_url": true,
-    "private_http_intercepted": true,
-    "websocket_blocked": true,
-    "service_workers_blocked": true,
-    "denied_fixture_hits": 0,
-    "live_proxy_private_http_connect_denied": true,
-    "network": "none",
-    "capabilities": [
-      "SYS_CHROOT"
-    ],
-    "no_new_privileges": true
-  },
-  "release_ready": false,
-  "unverified": [
-    "hosted CI runs",
-    "signature and SBOM verification at registry",
-    "deployment host firewall",
-    "live paid/search providers requiring credentials",
-    "continuous Ollama endpoint availability",
-    "adversarial peak memory"
-  ],
-  "source_hash_algorithm": "SHA-256 of sorted src/*.py paths (recursive), NUL, and file bytes",
-  "uv_lock_sha256": "2c466fd1feb9b41f6f01ad7160fc4a22d75d478f666db59d6d53f2ae6f1bf11a",
-  "pytest_matrix": {
-    "3.11.16": 136,
-    "3.12.15": 136,
-    "3.13.14": 136
-  },
-  "tool_count": 10,
-  "pyjwt": "2.15.1",
-  "anyio": "4.15.1",
-  "perl_base": "5.40.1-6+deb13u1",
-  "perl_base_build_minimum": "5.36.0-7+deb12u4",
-  "debian": "13.7",
-  "browser_feature_fixtures": [
-    {
-      "transport": "inprocess",
-      "tool_count": 10,
-      "navigate_reuse_close": true,
-      "fill_press_select_wait_click": true,
-      "same_origin_form_post": true,
-      "spa_history_preserves_form": true,
-      "multiple_cookie_roundtrip": true,
-      "cross_origin_and_idle_posts_denied": true,
-      "session_isolation": true,
-      "stealth_webdriver_mask": true,
-      "session_admission_expiry_shutdown": true,
-      "private_navigation_cleanup": true
-    },
-    {
-      "transport": "http",
-      "tool_count": 10,
-      "navigate_reuse_close": true,
-      "fill_press_select_wait_click": true,
-      "same_origin_form_post": true,
-      "spa_history_preserves_form": true,
-      "multiple_cookie_roundtrip": true,
-      "cross_origin_and_idle_posts_denied": true,
-      "session_isolation": true,
-      "stealth_webdriver_mask": true,
-      "session_admission_expiry_shutdown": true,
-      "private_navigation_cleanup": true
-    }
-  ],
-  "live_ollama": {
-    "version": "0.35.1",
-    "model": "agent-pro:latest",
-    "parent": "qwen3.5:9b",
-    "thinking": false,
-    "controlled_article_results": [
-      {
-        "tool": "extract",
-        "mode": "schema",
-        "model": "agent-pro:latest",
-        "error": false,
-        "result": {
-          "data": {
-            "name": "Orion Lamp",
-            "brand": "Acme",
-            "price_usd": 49
-          },
-          "url": "https://fixture.example/product"
-        }
-      },
-      {
-        "tool": "extract",
-        "mode": "text",
-        "model": "agent-pro:latest",
-        "error": false,
-        "result": {
-          "text": "The Orion Lamp, priced at 49 USD, is a brand by Acme made of steel with a two-year warranty.",
-          "url": "https://fixture.example/product"
-        }
-      },
-      {
-        "tool": "deep_research",
-        "mode": "text",
-        "model": "agent-pro:latest",
-        "error": false,
-        "result": {
-          "query": "What are the material and warranty of the Orion Lamp? Cite the source.",
-          "backend": "fixture",
-          "sources": [
-            {
-              "url": "https://fixture.example/product",
-              "title": "Fixture product"
-            }
-          ],
-          "failures": [],
-          "report": "Based on the provided source [1], here are the details for the Orion Lamp:\n\n*   **Material:** Steel\n*   **Warranty:** Two years\n\n**Source:** [1] (https://fixture.example/product)"
-        }
-      }
-    ],
-    "later_direct_endpoint_check": "ConnectTimeout"
-  },
-  "live_public": [
-    {
-      "tool": "scrape",
-      "is_error": false,
-      "result": {
-        "url": "https://example.com",
-        "status": 200,
-        "via": "static",
-        "title": "Example Domain",
-        "markdown": "This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
-        "links": []
-      }
-    },
-    {
-      "tool": "map",
-      "is_error": false,
-      "result": {
-        "url": "https://example.com",
-        "count": 0,
-        "links": []
-      }
-    },
-    {
-      "tool": "search",
-      "is_error": false,
-      "result": {
-        "backend": "duckduckgo",
-        "count": 3,
-        "results": [
-          {
-            "title": "Our Documentation | Python.org",
-            "url": "https://www.python.org/doc/",
-            "content": "Python's documentation, tutorials, and guides are constantly evolving. Get started here, or scroll down for documentation broken out by type and subject."
-          },
-          {
-            "title": "3.14.7 Documentation",
-            "url": "https://docs.python.org/3/index.html",
-            "content": "This is the official documentation for Python 3.14.7.Or all \"What's new\" documents since Python 2.0. Tutorial Start here: a tour of Python's syntax and features."
-          },
-          {
-            "title": "The Python Tutorial \u2014 Python 3.14.7 documentation",
-            "url": "https://docs.python.org/3/tutorial/index.html",
-            "content": "Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming."
-          }
-        ]
-      }
-    }
-  ],
-  "live_public_map_crawl": [
-    {
-      "tool": "map",
-      "is_error": false,
-      "result": {
-        "url": "https://www.python.org/doc/",
-        "count": 10,
-        "links": [
-          "https://www.python.org/doc/",
-          "https://www.python.org/",
-          "https://www.python.org/psf/",
-          "https://www.python.org/jobs/",
-          "https://www.python.org/community/",
-          "https://www.python.org/community/irc/",
-          "https://www.python.org/about/",
-          "https://www.python.org/about/apps/",
-          "https://www.python.org/about/quotes/",
-          "https://www.python.org/about/gettingstarted/"
-        ]
-      }
-    },
-    {
-      "tool": "crawl",
-      "is_error": false,
-      "result": {
-        "job_id": "d6e43b9f30f64da3897357be0a657767",
-        "status": "completed",
-        "pages_crawled": 2,
-        "error": null,
-        "truncated": false,
-        "failures": []
-      }
-    }
-  ],
-  "provider_fixture_coverage": [
-    "ollama",
-    "anthropic real SDK",
-    "tavily",
-    "brave",
-    "searxng",
-    "duckduckgo"
-  ],
-  "real_transport_coverage": [
-    "stdio subprocess: seven non-browser tools and ten-tool inventory",
-    "authenticated streaming HTTP: seven non-browser tools and ten-tool inventory",
-    "authenticated streaming HTTP: three browser tools with real Chromium"
-  ],
-  "compose_configuration_checks": {
-    "provider_and_endpoint_aliases": true,
-    "empty_thinking_model_default": true,
-    "search_keys_and_crawl_overrides": true,
-    "isolated_network_and_proxy_retained": true
-  },
-  "browser_fixture_scripts_sha256": {
-    "scripts/browser_regression.py": "cb1ffd7a851fc62d990fbe8438a972de44773a9f5cd5d1f571f09196e170dc07",
-    "scripts/browser_features.py": "7d4a0e3ec95221a67d7bd9a85204f14c831ad9193cb210e8581aad359546bf0a"
-  }
+  ]
 }

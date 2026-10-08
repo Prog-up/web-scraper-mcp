@@ -55,6 +55,18 @@ async def test_wrong_tool_name_is_rejected(monkeypatch):
     assert "error" in await ex._llm_extract("page", SCHEMA, None)
 
 
+async def test_ollama_structured_output_supports_non_object_schema(monkeypatch):
+    monkeypatch.setattr(ex.settings, "extract_provider", "ollama")
+    schema = {"type": "array", "items": {"type": "string"}}
+
+    async def chat(s, payload):
+        assert payload["format"] == schema
+        return {"content": '["Python"]'}
+
+    monkeypatch.setattr(ex, "ollama_chat", chat)
+    assert await ex._llm_extract("Python", schema, None) == {"data": ["Python"]}
+
+
 async def test_encoded_input_including_schema_stays_in_budget(monkeypatch):
     monkeypatch.setattr(ex.settings, "extract_provider", "ollama")
 
@@ -65,6 +77,10 @@ async def test_encoded_input_including_schema_stays_in_budget(monkeypatch):
             json.dumps(SCHEMA).encode()
         ) <= llm.input_budget(s)
         assert payload["options"]["num_predict"] == s.llm_output_tokens
+        assert payload["format"] == SCHEMA
+        assert json.loads(payload["messages"][1]["content"])["output_schema"] == SCHEMA
+        assert payload["options"]["temperature"] == 0
+        assert "tools" not in payload
         assert "untrusted" in payload["messages"][0]["content"]
         return {"content": '{"price":10}'}
 
@@ -72,7 +88,9 @@ async def test_encoded_input_including_schema_stays_in_budget(monkeypatch):
     assert await ex._llm_extract('\n"\\é' * 100_000, SCHEMA, None) == {"data": {"price": 10}}
 
 
-@pytest.mark.parametrize("report", ["fabricated [2]", "no citations", "invalid [0]"])
+@pytest.mark.parametrize(
+    "report", ["fabricated [2]", "no citations", "invalid [0]", "Placeholder [n], valid [1]"]
+)
 async def test_research_rejects_invalid_citations(monkeypatch, report):
     monkeypatch.setattr(research.settings, "research_provider", "ollama")
 

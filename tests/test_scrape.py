@@ -51,3 +51,26 @@ def test_link_output_is_bounded_even_with_long_base_url():
     long = extract_links(html, "https://site.example/" + "a" * 7900 + "/page")
     assert len(long) < 1000
     assert sum(len(url.encode()) for url in long) <= 256_000
+
+
+def test_short_catalog_keeps_all_prices_without_navigation_or_ads():
+    html = """<html><body><header><nav>Home Login About</nav></header>
+    <aside>BUY NOW! Sponsored giveaway</aside>
+    <ul><li>Blue shoes $60</li><li>Red boots $95</li><li>Green sandals $30</li></ul>
+    <footer>Privacy Cookies Terms</footer></body></html>"""
+    markdown = to_markdown(html, BASE)
+    for expected in ("Blue shoes", "$60", "Red boots", "$95", "Green sandals", "$30"):
+        assert expected in markdown
+    for boilerplate in ("Login", "Sponsored", "giveaway", "Cookies", "Privacy"):
+        assert boilerplate not in markdown
+
+
+def test_short_article_preserves_its_own_header_and_footer():
+    html = """<html><body><header>Site banner</header>
+    <article><header><h1>Experiment result</h1></header>
+    <p>The measured temperature was 23 degrees Celsius.</p>
+    <footer>Author: Alice, laboratory notes</footer></article>
+    <footer>Site privacy policy</footer></body></html>"""
+    markdown = to_markdown(html, BASE)
+    assert "Experiment result" in markdown and "23 degrees" in markdown
+    assert "Site banner" not in markdown and "Site privacy policy" not in markdown

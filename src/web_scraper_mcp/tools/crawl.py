@@ -34,6 +34,19 @@ class CrawlJob:
 _jobs: OrderedDict[str, CrawlJob] = OrderedDict()
 _tasks: set[asyncio.Task] = set()
 _reaper: asyncio.Task | None = None
+_worker_slots: tuple[asyncio.AbstractEventLoop, asyncio.Semaphore] | None = None
+
+
+def _workers() -> asyncio.Semaphore:
+    """Share bounded workers across admitted jobs; no whole-frontier wait queues."""
+    global _worker_slots
+    loop = asyncio.get_running_loop()
+    if _worker_slots is None or _worker_slots[0] is not loop:
+        _worker_slots = (
+            loop,
+            asyncio.Semaphore(min(settings.max_concurrent_fetches, work.maximum)),
+        )
+    return _worker_slots[1]
 
 
 async def _crawl_one(url: str, same_domain: bool) -> tuple[dict, list[str]]:
@@ -63,53 +76,84 @@ async def _run(
             seen = {seed}
             frontier = deque([(seed, 0)])
             attempts = 0
+            completed_urls: set[str] = set()
+            concurrency = min(settings.crawl_concurrency, settings.max_concurrent_fetches)
+            workers = _workers()
+
+            async def read(url: str):
+                async with workers:
+                    return await _crawl_one(url, same_domain)
+
             while frontier and len(job.pages) < max_pages:
-                url, depth = frontier.popleft()
-                attempts += 1
-                try:
-                    page, links = await _crawl_one(url, same_domain)
-                    final = canonical_url(page["url"])
-                    if same_domain and not same_host(final, seed):
-                        raise ValueError("redirect left seed host")
-                except Exception as exc:
-                    if depth == 0:
-                        job.status = "failed"
-                        job.error = f"Failed to fetch seed URL ({type(exc).__name__})"
-                        return
-                    failure = {"url": url, "error": "page failed fetch/destination policy"}
-                    size = len(json.dumps(failure).encode())
-                    if job.result_bytes + size <= settings.crawl_result_bytes:
-                        job.failures.append(failure)
-                        job.result_bytes += size
-                    else:
-                        job.truncated = True
-                        break
-                    continue
-                size = len(json.dumps(page, ensure_ascii=False).encode())
-                if job.result_bytes + size > settings.crawl_result_bytes:
+                remaining = min(
+                    max_pages - len(job.pages), settings.crawl_frontier_limit - attempts
+                )
+                if remaining <= 0:
                     job.truncated = True
                     break
-                if not any(existing["url"] == page["url"] for existing in job.pages):
-                    job.pages.append(page)
-                    job.result_bytes += size
-                seen.add(final)
-                if depth >= max_depth:
-                    continue
-                for link in links:
+                batch = [
+                    frontier.popleft() for _ in range(min(concurrency, remaining, len(frontier)))
+                ]
+                attempts += len(batch)
+                # gather preserves discovery order and cancels/awaits children when
+                # the parent job is cancelled. Never create the whole frontier's tasks.
+                results = await asyncio.gather(
+                    *(read(url) for url, _ in batch), return_exceptions=True
+                )
+                stop = False
+                for (url, depth), result in zip(batch, results, strict=True):
+                    if isinstance(result, asyncio.CancelledError):
+                        raise result
                     try:
-                        target = canonical_url(link)
-                        if same_domain and not same_host(target, seed):
-                            continue
-                    except ValueError:
+                        if isinstance(result, BaseException):
+                            raise result
+                        page, links = result
+                        final = canonical_url(page["url"])
+                        if same_domain and not same_host(final, seed):
+                            raise ValueError("redirect left seed host")
+                    except Exception as exc:
+                        if depth == 0:
+                            job.status = "failed"
+                            job.error = f"Failed to fetch seed URL ({type(exc).__name__})"
+                            return
+                        failure = {"url": url, "error": "page failed fetch/destination policy"}
+                        size = len(json.dumps(failure).encode())
+                        if job.result_bytes + size <= settings.crawl_result_bytes:
+                            job.failures.append(failure)
+                            job.result_bytes += size
+                        else:
+                            job.truncated = True
+                            stop = True
+                            break
                         continue
-                    if target in seen:
+                    if final in completed_urls:
                         continue
-                    if len(seen) >= settings.crawl_frontier_limit:
+                    size = len(json.dumps(page, ensure_ascii=False).encode())
+                    if job.result_bytes + size > settings.crawl_result_bytes:
                         job.truncated = True
+                        stop = True
                         break
-                    seen.add(target)
-                    frontier.append((target, depth + 1))
-                if attempts >= settings.crawl_frontier_limit:
+                    job.pages.append(page)
+                    completed_urls.add(final)
+                    job.result_bytes += size
+                    seen.add(final)
+                    if depth >= max_depth:
+                        continue
+                    for link in links:
+                        try:
+                            target = canonical_url(link)
+                            if same_domain and not same_host(target, seed):
+                                continue
+                        except ValueError:
+                            continue
+                        if target in seen:
+                            continue
+                        if len(seen) >= settings.crawl_frontier_limit:
+                            job.truncated = True
+                            break
+                        seen.add(target)
+                        frontier.append((target, depth + 1))
+                if stop or attempts >= settings.crawl_frontier_limit:
                     job.truncated = True
                     break
             job.status = "completed"
@@ -144,7 +188,7 @@ def start_cleanup() -> None:
 
 
 async def close() -> None:
-    global _reaper
+    global _reaper, _worker_slots
     tasks = list(_tasks)
     if _reaper is not None:
         tasks.append(_reaper)
@@ -154,6 +198,7 @@ async def close() -> None:
     await asyncio.gather(*tasks, return_exceptions=True)
     _tasks.clear()
     _jobs.clear()
+    _worker_slots = None
 
 
 def register(mcp: FastMCP) -> None:
